@@ -1,2 +1,2 @@
 # Rubicon 3
-The latest installment of your insane silicon friend.
+### The latest installment of your insane silicon friend.
