@@ -1,0 +1,5 @@
+# Pycache directories and files
+*.pyc
+discord/__pycache__
+brickrigs/__pycache__
+terminal/__pycache__
