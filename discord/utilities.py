@@ -22,6 +22,7 @@ class FM:
     debugd1, debugd2, debugd3 = (f'{reverse}{light_purple}[DEBUG] (L1){remove_reverse}', f'{reverse}{light_purple}[DEBUG] (L2){remove_reverse}', f'{reverse}{light_purple}[DEBUG] (L3){remove_reverse}')
 
     trying = f"{reverse}{light_yellow}[TRYING]{remove_reverse}"
+    ginfo = f"{reverse}{light_green}[INFO]{remove_reverse}"
 
     @staticmethod
     def header_warn(header, msg):
