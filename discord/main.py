@@ -1,10 +1,10 @@
 ###############################################################################################################################################
 ##                                                                                                                                           ##
-##                                                            RUBICON - V:3.2.3.0                                                            ##
+##                                                            RUBICON - V:3.2.3.1                                                            ##
 ##                                                Your absolutely nuts silicion-based friend.                                                ##
 ##                                                                                                                                           ##
 ##                                           Created by Destiny (Copper (FateUnix29), @destiny_29)                                           ##
-##                                         Licensed under (NOT CHOSEN YET). See LICENSE for details.                                         ##
+##                                            Licensed under GNU GPL v3. See LICENSE for details.                                            ##
 ##                                                                                                                                           ##
 ##                                       Find Rubicon on GitHub: https://github.com/FateUnix29/Rubicon                                       ##
 ##                                                                                                                                           ##
@@ -40,7 +40,7 @@ This, of course, may cause errors. The version of your Python interpreter is {ve
 
 ### Constants ###
 
-_ver = "3.2.3.0"
+_ver = "3.2.3.1"
 
 ###  Globals  ###
 
