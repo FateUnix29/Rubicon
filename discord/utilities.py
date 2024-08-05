@@ -1,5 +1,8 @@
 from builtins import print as print_ins
 
+import discord
+import groq
+
 class FM:
     reset = '\x1b[0m\x1b[49m'
     red, blue, green, yellow, purple, cyan, white, black, \
@@ -40,3 +43,51 @@ class FM:
 def print(*args, end='\n', reset_color=True, **kwargs):
     if reset_color: print_ins(*args, end=f"{end}{FM.reset}", **kwargs)
     else: print_ins(*args, end=f"{end}", **kwargs)
+
+# (large) Discord-related functions
+
+# (large) Other general functions
+def prompt_ai(message_contents: str, author: str, channel: discord.TextChannel | discord.VoiceChannel, conversation: list[dict[str, str]],
+              use_conversation: bool, model: str, temp: float, top_p: float, max_tokens: int, restricted_phrases: list[str], groq_key: str) -> str:
+    """Prompts Rubicon's AI processing and returns the response given.
+
+    Args:
+        message_contents (str): The contents of the message to be processed.
+        author (str): The name of the author of the message.
+        channel (discord.TextChannel | discord.VoiceChannel): The channel the message was sent in.
+        conversation (list[dict[str, str]]): The conversation history.
+        use_conversation (bool): Whether or not to use the conversation history. If not, you are expected to add it to the history yourself.
+        model (str): The name of the model to use.
+        temp (float): The temperature to use.
+        top_p (float): The top_p to use.
+        max_tokens (int): The maximum tokens to use.
+        restricted_phrases (list[str]): The list of restricted phrases. These are removed from the response.
+        groq_key (str): The GroqCloud API key. For obvious security reasons, this should not be shared and a good way to protect it is to put it in an environment variable."""
+    # Assemble the message.
+    if use_conversation:
+        message = f"{author} (in '#{channel.name}', '{channel.guild.name}'): {message_contents}"
+        conversation.append({"role": "user", "content": message})
+    # Create our Groq instance
+    groq_instance = groq.Groq(api_key=groq_key)
+    # Create a completion
+    ai_completion = groq_instance.chat.completions.create(
+        model=model,
+        messages=conversation,
+        temperature=temp,
+        top_p=top_p,
+        max_tokens=max_tokens,
+        stream=True,
+        stop=None
+    )
+    # Process the response
+    ai_response = ""
+    for chunk in ai_completion:
+        ai_response += chunk.choices[0].delta.content or ""
+    for phrase in restricted_phrases:
+        ai_response = ai_response.replace(phrase, "")
+    if ai_response.strip() == "":
+        print(f"{FM.info} No response from Rubicon.")
+        ai_response = "No response."
+    # Truncate messages to 2000 characters max
+    ai_response = ai_response[:1999]
+    return ai_response

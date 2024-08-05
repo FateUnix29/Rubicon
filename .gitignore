@@ -3,3 +3,11 @@
 discord/__pycache__
 brickrigs/__pycache__
 terminal/__pycache__
+
+# Guild file
+discord/guilds.txt
+
+# Memories
+discord/memories/*
+brickrigs/memories/*
+terminal/memories/*
