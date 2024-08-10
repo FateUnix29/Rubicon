@@ -1,6 +1,6 @@
 ###############################################################################################################################################
 ##                                                                                                                                           ##
-##                                                            RUBICON - V:3.5.0.0                                                            ##
+##                                                            RUBICON - V:3.5.0.1                                                            ##
 ##                                                Your absolutely nuts silicion-based friend.                                                ##
 ##                                                                                                                                           ##
 ##                                           Created by Destiny (Copper (FateUnix29), @destiny_29)                                           ##
@@ -40,7 +40,7 @@ This, of course, may cause errors. The version of your Python interpreter is {ve
 
 ### Constants ###
 
-_ver = "3.5.0.0"
+_ver = "3.5.0.1"
 
 ###  Globals  ###
 
@@ -102,6 +102,24 @@ if current_model not in ai_models:
     current_model = "llama3-70b-8192" # Default model.
 
 ### Functions ###
+# General
+def rubicon_welcome_message(extra_newline: bool = False):
+    """Prints a big welcome message to the screen.
+    
+    Args:
+        extra_newline (bool, optional): Add an extra newline to the end. Defaults to False."""
+    count = 60
+    print(f"{FM.light_yellow}{'-'*count}", reset_color=False)
+    print(f"|{' '*(count-2)}|", reset_color=False)
+    string_to_print_1 = f"RUBICON - V:{_ver}"
+    string_to_print_2 = "Your absolutely nuts silicon-based friend."
+    spaces_string_1 = ((count-2) - len(string_to_print_1)) // 2
+    print(f"|{' '*spaces_string_1}{string_to_print_1}{' '*(spaces_string_1+1)}|", reset_color=False)
+    spaces_string_2 = ((count-2) - len(string_to_print_2)) // 2
+    print(f"|{' '*spaces_string_2}{string_to_print_2}{' '*spaces_string_2}|", reset_color=False)
+    print(f"|{' '*(count-2)}|", reset_color=False)
+    print(f"{'-'*count}{'\n' if extra_newline else ''}")
+
 # AI
 def grab_siblings():
     global sibling_count, old_sibling_count
@@ -199,6 +217,7 @@ restore_point = deepcopy(conversation)
 
 @client.event
 async def on_ready():
+    rubicon_welcome_message(extra_newline=True)
     print(f"{FM.success} Logged in as {client.user} ({client.user.id})")
     await leave_all_unauthorized_guilds(client.guilds)
     guilds_general = guilds_with_rubicongeneral()
