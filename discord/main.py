@@ -1,6 +1,6 @@
 ###############################################################################################################################################
 ##                                                                                                                                           ##
-##                                                            RUBICON - V:3.5.0.1                                                            ##
+##                                                            RUBICON - V:3.5.0.2                                                            ##
 ##                                                Your absolutely nuts silicion-based friend.                                                ##
 ##                                                                                                                                           ##
 ##                                           Created by Destiny (Copper (FateUnix29), @destiny_29)                                           ##
@@ -31,7 +31,7 @@ from copy import deepcopy                                      # Deepcopy. Mainl
 # Get python interpreter version
 ver = sys.version_info
 ver = f"{ver.major}.{ver.minor}.{ver.micro} ({ver.releaselevel})"
-expected = "3.12.3 (final)"
+expected = "3.12.5 (final)"
 if ver != expected:
     print(f"\n{FM.light_yellow}Small warning:\nYour Python interpreter does not match that of what Rubicon was developed with.\n\
 This, of course, may cause errors. The version of your Python interpreter is {ver}, and Rubicon was developed with {expected}.\n")
@@ -40,7 +40,7 @@ This, of course, may cause errors. The version of your Python interpreter is {ve
 
 ### Constants ###
 
-_ver = "3.5.0.1"
+_ver = "3.5.0.2"
 
 ###  Globals  ###
 

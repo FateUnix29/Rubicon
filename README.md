@@ -24,7 +24,7 @@ You already have Rubicon 3 installed.
 
 What you need is Python 3.12.3 or higher, if not present already.
 
-Find Python 3.12.3 [here](https://www.python.org/downloads/release/python-3123/).
+Find Python 3.12.5 (current Python version Rubicon is developed with) [here](https://www.python.org/downloads/release/python-3125/).
 
 ## Running
 Given that you have Python, and the environment variables Rubicon needs to function, you can open a terminal/command prompt and run `python3 main.py`, or, if Python is set up properly,
