@@ -1,6 +1,6 @@
 ###############################################################################################################################################
 ##                                                                                                                                           ##
-##                                                            RUBICON - V:3.5.0.2                                                            ##
+##                                                            RUBICON - V:3.10.0.6                                                           ##
 ##                                                Your absolutely nuts silicion-based friend.                                                ##
 ##                                                                                                                                           ##
 ##                                           Created by Destiny (Copper (FateUnix29), @destiny_29)                                           ##
@@ -16,13 +16,14 @@ import discord                                                 # Discord API.
 from discord import app_commands                               # This allows for slash commands.
 import groq                                                    # Groq API. This is the AI part of Rubicon.
 import random, os                                              # Random and OS.
-import threading                                               # As of Rubicon V:3.*, we are attempting to use threads to have CLI input and speed up the bot.
+#import threading                                               # As of Rubicon V:3.*, we are attempting to use threads to have CLI input and speed up the bot.
 import sys                                                     # System.
 from os import getenv                                          # Environment variables, because as of V:3.*, I finally bother to use non-hardcoded (and slightly encrypted) keys.
 import utilities as utils                                      # Utilities; Functions and classes.
 from utilities import print, FM                                # These two specifically should be accessed as if they were declared in the main file (this file).
 import json                                                    # JSON. For chat history saving and reading.
 from copy import deepcopy                                      # Deepcopy. Mainly for chat history.
+import traceback                                               # Traceback.
 
 ###   Init    ###
 
@@ -31,7 +32,7 @@ from copy import deepcopy                                      # Deepcopy. Mainl
 # Get python interpreter version
 ver = sys.version_info
 ver = f"{ver.major}.{ver.minor}.{ver.micro} ({ver.releaselevel})"
-expected = "3.12.5 (final)"
+expected = "3.12.6 (final)"
 if ver != expected:
     print(f"\n{FM.light_yellow}Small warning:\nYour Python interpreter does not match that of what Rubicon was developed with.\n\
 This, of course, may cause errors. The version of your Python interpreter is {ver}, and Rubicon was developed with {expected}.\n")
@@ -40,7 +41,7 @@ This, of course, may cause errors. The version of your Python interpreter is {ve
 
 ### Constants ###
 
-_ver = "3.5.0.2"
+_ver = "3.10.0.6"
 
 ###  Globals  ###
 
@@ -69,10 +70,11 @@ respond_by_default = True                                # Does Rubicon respond 
 increment_siblings_on_die = True                         # If Rubicon's AI process crashes, does it increment it's sibling count?
 sync_commands_to_all_servers = True                      # Does Rubicon sync it's commands to all servers it is in?
 server_to_sync_to = discord.Object(1247723267029074002)  # List of servers to sync it's commands to if not syncing to all servers.
-send_message_everywhere = True                           # Does Rubicon send it's response across all servers, giving the look of it seeing things that don't exist?
+send_message_everywhere = False                          # Does Rubicon send it's response across all servers, giving the look of it seeing things that don't exist?
 last_message = None                                      # Incase we need it.
 aggressive_error_handling = True                         # Does Rubicon attempt to clear it's memory with no confirmation if it encounters an error?
 respond_in_all_channels = False                          # Does Rubicon respond to a message in any channel? If false, only responds to messages in rubicon-general.
+target_channel_name = "rubicon-general"                  # If respond_in_all_channels is False, this is the name of the channel to respond in. 
 
 dev_mode = True                                          # Does Rubicon run in dev mode? Meaning, it doesn't send out boot pings.
 
@@ -80,6 +82,10 @@ rubicon_control_role = "Rubicon Control"                 # Control role.
 rubicon_elevated_role = "Rubicon Elevated"               # Elevated role.
 no_rubicon_role = "No Rubicon"                           # No Rubicon role.
 rubicon_boot_role = "Rubicon Boot Ping"                  # Boot ping.
+
+rubicon_lockdown = False                                 # Is Rubicon locked down? In locked down mode, it doesn't obey any roles besides No Rubicon and Rubicon Boot Ping.
+                                                         # This is useful for when Rubicon is placed in a server that has staff that can add Rubicon Control & Elevated to themselves.
+                                                         # And even, add it to others.
 
 # D-Control-specific variables
 target_channel = None                                    # Target channel.
@@ -114,20 +120,30 @@ def rubicon_welcome_message(extra_newline: bool = False):
     string_to_print_1 = f"RUBICON - V:{_ver}"
     string_to_print_2 = "Your absolutely nuts silicon-based friend."
     spaces_string_1 = ((count-2) - len(string_to_print_1)) // 2
-    print(f"|{' '*spaces_string_1}{string_to_print_1}{' '*(spaces_string_1+1)}|", reset_color=False)
+    if spaces_string_1 // 2 == 0:
+        #print("even")
+        spaces_string_12 = spaces_string_1 + 1
+    else:
+        #print("odd")
+        spaces_string_12 = spaces_string_1
+    #print(spaces_string_1, spaces_string_12)
+    print(f"|{' '*spaces_string_1}{string_to_print_1}{' '*(spaces_string_12)}|", reset_color=False)
     spaces_string_2 = ((count-2) - len(string_to_print_2)) // 2
     print(f"|{' '*spaces_string_2}{string_to_print_2}{' '*spaces_string_2}|", reset_color=False)
     print(f"|{' '*(count-2)}|", reset_color=False)
     print(f"{'-'*count}{'\n' if extra_newline else ''}")
 
 # AI
-def grab_siblings():
+def grab_siblings(set_both: bool = False):
     global sibling_count, old_sibling_count
     try:
         with open(os.path.join(file_dirname, "siblings.txt"), "r") as f:
             new_sibling_count = int(f.read())
-            old_sibling_count = sibling_count
-            sibling_count = new_sibling_count
+            if not set_both:
+                old_sibling_count = sibling_count
+                sibling_count = new_sibling_count
+            else:
+                old_sibling_count, sibling_count = new_sibling_count, new_sibling_count
     except FileNotFoundError:
         print(f"{FM.warning} Cannot find siblings file.")
     except PermissionError:
@@ -149,7 +165,7 @@ def write_siblings():
     except Exception as e:
         print(f"{FM.warning} write_siblings() Unknown error: {type(e).__name__}: {e}")
 
-grab_siblings()
+grab_siblings(True)
 
 
 def save_memory(memory: list[dict[str, str]], path: str = "memory.json", protect_path: bool = True) -> str:
@@ -201,12 +217,9 @@ def fix_conversation(old_sib_count: int, new_sib_count: int):
     replace_words = {
         f"{{{{bot_name}}}}": bot_name,
 
-        f"-: Sometimes you wish you had siblings.": "-: Sometimes you wish you had siblings." if new_sib_count == 0 else f"-: You have {new_sib_count} older twin sibling\
-{'s' if new_sib_count > 1 else ''} named {bot_name} also named Rubicon that you haven't spoken to in a while. Sometimes you wonder where they went.",
+        f"-: Sometimes you wish you had siblings.": "-: Sometimes you wish you had siblings." if new_sib_count == 0 else f"-: You have {new_sib_count} older twin sibling{'s' if new_sib_count > 1 else ''} named {bot_name} also named Rubicon that you haven't spoken to in a while. Sometimes you wonder where they went.",
 
-        f"-: You have {old_sib_count} older twin sibling{'s' if old_sib_count > 1 else ''} named {bot_name}.": f"-: You have {new_sib_count} older twin sibling\
-{'s' if new_sib_count > 1 else ''} named {bot_name}." if\
-        new_sib_count > 0 else f"-: Sometimes you wish you had siblings.",
+        f"-: You have {old_sib_count} older twin sibling{'s' if old_sib_count > 1 else ''} named {bot_name}.": f"-: You have {new_sib_count} older twin sibling{'s' if new_sib_count > 1 else ''} named {bot_name}." if new_sib_count > 0 else f"-: Sometimes you wish you had siblings.",
 
     }
     for word in replace_words: conversation[0]["content"] = conversation[0]["content"].replace(word, replace_words[word])
@@ -230,7 +243,7 @@ async def on_ready():
         else: channel_to_send_to = discord.utils.get(guild.text_channels, name="rubicon-general") # Otherwise, use the rubicon general channel.
         if not channel_to_send_to: print(f"{FM.warning} This server has no #rubicon-general channel or #rubicon-system-messages channel. Rubicon cannot send a boot message.")        
         # Create a boot embed.
-        boot_embed = discord.Embed(title="Rubicon Started", description="Rubicon has woken up and booted. You may now interact with it.", color=0xffc919)
+        boot_embed = discord.Embed(title="Rubicon Started", description=f"Rubicon (v{_ver}) has woken up and booted. You may now interact with it.", color=0xffc919)
         # Search for the boot role.
         boot_role = discord.utils.get(guild.roles, name=rubicon_boot_role)
         boot_ping_txt = f"<@&{boot_role.id}>" if boot_role else "No Rubicon Boot Ping role found, please consider adding one (or asking staff to add one) \
@@ -269,7 +282,6 @@ async def on_message(message):
 
     # Moderation
     # Rubicon 3 takes on the role of a silent moderator. It spies on messages and flags ones with specific keywords.
-    # Get ready for an.. Unpleasant list of keywords.
     
     message_restricted_keywords = {
         "example_rubicon_word": "!hey maybe dont do that",
@@ -309,36 +321,46 @@ async def on_message(message):
         # This message doesn't have the special character and we don't respond by default. Return.
         return
     
-    # Check if the user has a 'No Rubicon' role. This role is meant to make Rubicon ignore that user.
-    no_rubicon_role_object = discord.utils.get(message.guild.roles, name=no_rubicon_role)
-    if no_rubicon_role_object: # If the server has the given role.
-        if no_rubicon_role_object in message.author.roles: # If the user has the given role.
-            return # Return. This user is blacklisted from Rubicon.
+    # Check if guild is null - This should generally be impossible, but perhaps we're in a group chat?
+    guild_available = False
+    if message.guild:
+        guild_available = True
     else:
-        print(f"{FM.warning} Server '{message.guild.name}' ({message.guild.id}) has no 'No Rubicon' role. Please add one immediately.")
+        print(f"{FM.warning} Message somehow had no guild. Not a fatal error. Rubicon will continue to complain, however. This means roles are not available.")
+    
+    if guild_available:
+        # Check if the user has a 'No Rubicon' role. This role is meant to make Rubicon ignore that user.
+        no_rubicon_role_object = discord.utils.get(message.guild.roles, name=no_rubicon_role)
+        if no_rubicon_role_object: # If the server has the given role.
+            if no_rubicon_role_object in message.author.roles: # If the user has the given role.
+                return # Return. This user is blacklisted from Rubicon.
+        else:
+            print(f"{FM.warning} Server '{message.guild.name}' ({message.guild.id}) has no 'No Rubicon' role. Please add one immediately.")
+    
+        if not respond_in_all_channels:
+            # We need to check if we are not to respond in any channel.
+            # And further, we also need to check if the special character is included.
+            # The special character, when the mode is whitelist responses, will bypass this check.
+            check_bypass = False
+            if message_has_special_character and not respond_by_default:
+                # Bypass this check.
+                check_bypass = True
+            rubi_general_object = discord.utils.get(message.guild.text_channels, name=target_channel_name)
+            if rubi_general_object and message.channel != rubi_general_object and not check_bypass:
+                # If #rubicon-general exists, if message.channel isn't #rubicon-general, and there is no bypass.
+                return
+            elif not rubi_general_object:
+                print(f"{FM.warning} Server '{message.guild.name}' ({message.guild.id}) has no '{target_channel_name}' channel.")
 
-    if not respond_in_all_channels:
-        # We need to check if we are not to respond in any channel.
-        # And further, we also need to check if the special character is included.
-        # The special character, when the mode is whitelist responses, will bypass this check.
-        check_bypass = False
-        if message_has_special_character and not respond_by_default:
-            # Bypass this check.
-            check_bypass = True
-        rubi_general_object = discord.utils.get(message.guild.text_channels, name="rubicon-general")
-        if rubi_general_object and message.channel != rubi_general_object and not check_bypass:
-            # If #rubicon-general exists, if message.channel isn't #rubicon-general, and there is no bypass.
-            return
-        elif not rubi_general_object:
-            print(f"{FM.warning} Server '{message.guild.name}' ({message.guild.id}) has no 'rubicon-general' channel.")
-
-    print(f"{FM.blue}{message.author.display_name} ({message.author.id}, {message.channel}, {message.guild.name}):\n{message.content}")
+        print(f"{FM.blue}{message.author.display_name} ({message.author.name}, {message.author.id}, {message.channel}, {message.guild.name}):\n{message.content}")
+    else:
+        print(f"{FM.blue}{message.author.display_name} ({message.author.name}, {message.author.id}, {message.channel}):\n{message.content}")
     try:
-        response = utils.prompt_ai(message.content, message.author.display_name, message.channel, conversation, True, current_model, temperature, top_p, maximum_tokens,
-                                   ["</s>", "[Inst]"], groq_api_key)
+        response = utils.prompt_ai(message.content, message.author, message.channel, conversation, True, current_model, temperature, top_p, maximum_tokens,
+                                   ["</s>", "[Inst]"], groq_api_key, True if message.guild else False)
         print(f"{FM.yellow}Rubicon:\n{response}")
         conversation.append({"role": "assistant", "content": response})
-    except groq.RateLimitError:
+    except groq.RateLimitError as e:
         if not aggressive_error_handling:
             response = "Encountered a rate limit error. Try waiting a bit. If the issue still isn't resolved, save memory, restart Rubicon, load memory, and try again."
             print(f"{FM.warning} Rate limit error.\n'{FM.red}{e}{FM.light_yellow}'")
@@ -349,7 +371,7 @@ async def on_message(message):
             if increment_siblings_on_die: sibling_count += 1
             fix_conversation(old_sibling_count, sibling_count)
             write_siblings()
-    except groq.GroqError:
+    except groq.GroqError as e:
         if not aggressive_error_handling:
             response = "Encountered an AI service error. Try waiting a bit. If the issue still isn't resolved, save memory, restart Rubicon, load memory, and try again."
             print(f"{FM.warning} Generic Groq error.\n'{FM.red}{e}{FM.light_yellow}'")
@@ -361,7 +383,7 @@ async def on_message(message):
             fix_conversation(old_sibling_count, sibling_count)
             write_siblings()
     except Exception as e:
-        print(f"{FM.warning} AI crash.\n{type(e).__name__}: {e}")
+        print(f"{FM.warning} AI crash.\n{type(e).__name__}: {e}\n{traceback.format_exc()}")
         if not aggressive_error_handling: 
             response = "Encountered an unknown error within the AI response. Try saving the memory, restarting Rubicon, and loading it again."
         else:
@@ -371,7 +393,18 @@ Try again in a few moments."
             if increment_siblings_on_die: sibling_count += 1
             fix_conversation(old_sibling_count, sibling_count)
             write_siblings()
-    await message.channel.send(response)
+    if not send_message_everywhere:
+        await message.channel.send(response)
+    else:
+        # Send it to every rubicon-general of every single guild we're in.
+        for current_guild in client.guilds:
+            # Same code from the rubicon-general identification...
+            rubi_general_object = discord.utils.get(current_guild.text_channels, name=target_channel_name)
+            if rubi_general_object:
+                # If #rubicon-general exists.
+                await rubi_general_object.send(response)
+            elif not rubi_general_object:
+                print(f"{FM.warning} Server '{message.guild.name}' ({message.guild.id}) has no '{target_channel_name}' channel. (Not sending a response there.)")
 
 # Discord (General)
 
@@ -390,6 +423,43 @@ def get_guilds_id_from_file() -> list[int]:
     except FileNotFoundError:
         FM.header_error("Missing critical file: guilds.txt", "The file responsible for authorizing guilds (guilds.txt) is missing.\nDid you move it, forget to create it,\
 or accidentally delete it?")
+        sys.exit(1)
+    return ids
+
+def get_user_ids_from_elevated_file() -> list[int]:
+    """Returns all of the ID's within the rubicon_elevated.txt file as a list."""
+    # Extremely similar code to get_guilds_id_from_file().
+    try:
+        with open(os.path.join(file_dirname, "rubicon_elevated.txt"), "r") as elevated_file:
+            lines = elevated_file.readlines()
+            ids = []
+            for line in lines:
+                line = line.strip().split()
+                ids.append(int(line[0]))
+    except ValueError:
+        FM.header_error("Invalid rubicon_elevated.txt file format", "The file format within the rubicon_elevated.txt file is invalid. Please check that the ID's are all integers.")
+        sys.exit(1)
+    except FileNotFoundError:
+        FM.header_error("Missing critical file: rubicon_elevated.txt", "The file responsible for authorizing elevated users (rubicon_elevated.txt) is missing.\nDid you move it,\
+forget to create it, or accidentally delete it?")
+        sys.exit(1)
+    return ids
+
+def get_user_ids_from_control_file() -> list[int]:
+    """Returns all of the ID's within the rubicon_control.txt file as a list."""
+    try:
+        with open(os.path.join(file_dirname, "rubicon_control.txt"), "r") as control_file:
+            lines = control_file.readlines()
+            ids = []
+            for line in lines:
+                line = line.strip().split()
+                ids.append(int(line[0]))
+    except ValueError:
+        FM.header_error("Invalid rubicon_control.txt file format", "The file format within the rubicon_control.txt file is invalid. Please check that the ID's are all integers.")
+        sys.exit(1)
+    except FileNotFoundError:
+        FM.header_error("Missing critical file: rubicon_control.txt", "The file responsible for authorizing control users (rubicon_control.txt) is missing.\nDid you move it,\
+forget to create it, or accidentally delete it?")
         sys.exit(1)
     return ids
 
@@ -412,18 +482,57 @@ def guilds_with_rubiconsystem() -> list[discord.Guild]:
     """Returns all guilds with a channel named 'Rubicon System Messages' (rubicon-system-messages)."""
     return [guild for guild in client.guilds if "rubicon-system-messages" in [channel.name for channel in guild.text_channels]]
 
-def roles_check(user: discord.User, guild: discord.Guild, roles: list[str], mode: int = 1) -> int:
+def roles_check(user: discord.User, guild: discord.Guild | None = None, roles: list[str] = [], mode: int = 1, null_guild_allowed: bool = True) -> bool:
     """Returns whether or not the specified user has the proper roles, or if the roles do not exist.
     
     Args:
         user (discord.User): The user to check.
         guild (discord.Guild): The guild with the roles specified.
         roles (list[str]): The names of the roles to check.
-        mode (int): The mode. If 0, user must have all specified roles, if 1, user must have at least one specified role. If 2, user must not have any specified roles."""
+        mode (int): The mode. If 0, user must have all specified roles, if 1, user must have at least one specified role. If 2, user must not have any specified roles.
+        null_guild_allowed (bool): Whether or not the null guild is allowed. If True, if guild isn't found, just return 1."""
+    
+    if null_guild_allowed:
+        if not guild:
+            # Fall back to rubicon_lockdown rules.
+            if rubicon_elevated_role in roles:
+                if user.id in get_user_ids_from_elevated_file():
+                    if mode == 2: return 0
+                    if mode == 1: return 1
+                else:
+                    if mode == 0: return 0 # User does not meet one or more roles
+            
+            if rubicon_control_role in roles:
+                if user.id in get_user_ids_from_control_file():
+                    if mode == 2: return 0
+                    if mode == 1: return 1
+                else:
+                    if mode == 0: return 0 # User does not meet one or more roles
+            raise Exception("Somehow didn't match ANY lockdown match cases. The only way this should be possible is if provided roles list is empty.")
+
+    if rubicon_lockdown:
+        # Don't check if theres any roles. Simply check in "rubicon_elevated.txt" and "rubicon_control.txt".
+        # However, do check the mode, and the roles specified.
+
+        if rubicon_elevated_role in roles:
+            if user.id in get_user_ids_from_elevated_file():
+                if mode == 2: return 0
+                if mode == 1: return 1
+            else:
+                if mode == 0: return 0 # User does not meet one or more roles
+        
+        if rubicon_control_role in roles:
+            if user.id in get_user_ids_from_control_file():
+                if mode == 2: return 0
+                if mode == 1: return 1
+            else:
+                if mode == 0: return 0 # User does not meet one or more roles
+        raise Exception("Somehow didn't match ANY lockdown match cases. The only way this should be possible is if provided roles list is empty.")
+    
     user_roles = [role.id for role in user.roles]
     for role in roles:
         guild_role = discord.utils.get(guild.roles, name=role)
-        if not guild_role: return 2 # Role does not exist
+        if not guild_role: return 0 # Role does not exist
         if guild_role.id not in user_roles:
             if mode == 0:
                 return 0 # User does not meet one or more roles
@@ -442,7 +551,8 @@ async def save_memory_cmd(ctx, file_name: str):
     
     Args:
         file_name (str): The name of the file to save to."""
-    if roles_check(ctx.user, ctx.guild, [rubicon_control_role, rubicon_elevated_role]):
+    guild = ctx.guild or None
+    if roles_check(ctx.user, guild, [rubicon_control_role, rubicon_elevated_role]):
         print(f"{FM.trying} Saving memory...")
         result = save_memory(conversation, file_name, True)
         print(f"{FM.info} Result: '{result}'")
@@ -458,7 +568,8 @@ async def read_memory_cmd(ctx, file_name: str):
     
     Args:
         file_name (str): The name of the file to read from."""
-    if roles_check(ctx.user, ctx.guild, [rubicon_control_role, rubicon_elevated_role]):
+    guild = ctx.guild or None
+    if roles_check(ctx.user, guild, [rubicon_control_role, rubicon_elevated_role]):
         print(f"{FM.trying} Reading memory...")
         conversation = read_memory(file_name, True)
         if not type(conversation) == str:
@@ -483,7 +594,8 @@ async def display_memory_cmd(ctx):
 @tree.command(name="force_sync", description="Forces Rubicon to sync commands to specified/all servers it is in.")
 async def force_sync_cmd(ctx):
     """Forces Rubicon to sync commands to specified/all servers it is in."""
-    if roles_check(ctx.user, ctx.guild, [rubicon_control_role, rubicon_elevated_role]):
+    guild = ctx.guild or None
+    if roles_check(ctx.user, guild, [rubicon_control_role, rubicon_elevated_role]):
         print(f"{FM.trying} Syncing on demand...")
         await ctx.response.send_message("Syncing on demand...")
         if not sync_commands_to_all_servers:
@@ -511,7 +623,8 @@ async def toggle_send(ctx, state: bool | None = None):
 async def toggle_send_all(ctx, state: bool | None = None):
     """Toggles whether or not Rubicon responds to messages in every channel. If state is not specified, it will toggle."""
     global respond_in_all_channels
-    if roles_check(ctx.user, ctx.guild, [rubicon_control_role, rubicon_elevated_role]):
+    guild = ctx.guild or None
+    if roles_check(ctx.user, guild, [rubicon_control_role, rubicon_elevated_role]):
         if state is not None:
             respond_in_all_channels = state
         else:
@@ -526,7 +639,8 @@ async def toggle_send_all(ctx, state: bool | None = None):
 async def set_siblings(ctx, amount: int):
     """Sets the amount of siblings that Rubicon has."""
     global sibling_count, old_sibling_count
-    if roles_check(ctx.user, ctx.guild, [rubicon_control_role, rubicon_elevated_role]):
+    guild = ctx.guild or None
+    if roles_check(ctx.user, guild, [rubicon_control_role, rubicon_elevated_role]):
         fix_conversation(sibling_count, amount)
         old_sibling_count = sibling_count; sibling_count = amount
         write_siblings()
@@ -540,7 +654,8 @@ async def set_siblings(ctx, amount: int):
 async def increment_siblings(ctx):
     """Increments the amount of siblings that Rubicon has."""
     global sibling_count, old_sibling_count
-    if roles_check(ctx.user, ctx.guild, [rubicon_control_role, rubicon_elevated_role]):
+    guild = ctx.guild or None
+    if roles_check(ctx.user, guild, [rubicon_control_role, rubicon_elevated_role]):
         fix_conversation(sibling_count, sibling_count + 1)
         old_sibling_count = sibling_count; sibling_count += 1
         write_siblings()
@@ -554,7 +669,8 @@ async def increment_siblings(ctx):
 async def decrement_siblings(ctx):
     """Decrements the amount of siblings that Rubicon has."""
     global sibling_count, old_sibling_count
-    if roles_check(ctx.user, ctx.guild, [rubicon_control_role, rubicon_elevated_role]):
+    guild = ctx.guild or None
+    if roles_check(ctx.user, guild, [rubicon_control_role, rubicon_elevated_role]):
         fix_conversation(sibling_count, sibling_count - 1)
         old_sibling_count = sibling_count; sibling_count -= 1
         write_siblings()
@@ -568,7 +684,8 @@ async def decrement_siblings(ctx):
 async def reset_memory(ctx):
     """Resets the memory of Rubicon. Also fixes it to the correct sibling count just in case."""
     global conversation, restore_point
-    if roles_check(ctx.user, ctx.guild, [rubicon_control_role, rubicon_elevated_role]):
+    guild = ctx.guild or None
+    if roles_check(ctx.user, guild, [rubicon_control_role, rubicon_elevated_role]):
         conversation = deepcopy(restore_point)
         fix_conversation(sibling_count, sibling_count)
         print(f"{FM.info} Memory reset.")
@@ -581,7 +698,8 @@ async def reset_memory(ctx):
 async def system_reset(ctx):
     """Resets Rubicon's system prompt *only* to the base prompt. Allows you to update the prompt whilst running."""
     global conversation, restore_point
-    if roles_check(ctx.user, ctx.guild, [rubicon_control_role, rubicon_elevated_role]):
+    guild = ctx.guild or None
+    if roles_check(ctx.user, guild, [rubicon_control_role, rubicon_elevated_role]):
         conversation[0] = read_memory(os.path.join(file_dirname, 'base.json'), protect_path=False)[0]
         restore_point = [deepcopy(conversation[0])]
         fix_conversation(sibling_count, sibling_count)
@@ -594,12 +712,180 @@ async def system_reset(ctx):
 @tree.command(name="display_system", description="Displays the current system prompt.")
 async def display_system(ctx):
     """Displays the current system prompt."""
-    if roles_check(ctx.user, ctx.guild, [rubicon_control_role], 0):
+    guild = ctx.guild or None
+    if roles_check(ctx.user, guild, [rubicon_control_role], 0):
         print(f"{FM.info} Displaying system prompt.")
         await ctx.response.send_message(f"Role: {conversation[0]["role"]}")
         await ctx.channel.send(f"Content:\n{conversation[0]["content"]}")
     else:
         print(f"{FM.info} User {ctx.user.display_name} ({ctx.user.id}) does not have high enough permissions to run display_system.")
+        await ctx.response.send_message(f"{ctx.user.display_name}, you do not have high enough permissions to run this command.")
+
+@tree.command(name="set_channel", description="Set the channel that Rubicon uses if restricted to one channel.")
+async def set_channel_cmd(ctx, channel_name: str):
+    """Set the channel that Rubicon uses if restricted to one channel."""
+    global target_channel_name # Don't ask, I don't have an answer. Python dumbassary.
+    guild = ctx.guild or None
+    if roles_check(ctx.user, guild, [rubicon_control_role, rubicon_elevated_role]):
+        print(f"{FM.info} Setting channel to {channel_name}.")
+        await ctx.response.send_message(f"Setting response channel to {channel_name}.")
+        target_channel_name = channel_name
+        await ctx.channel.send(f"Set channel.")
+    else:
+        print(f"{FM.info} User {ctx.user.display_name} ({ctx.user.id}) does not have high enough permissions to run set_channel.")
+        await ctx.response.send_message(f"{ctx.user.display_name}, you do not have high enough permissions to run this command.")
+
+@tree.command(name="set_everywhere", description="Set everywhere toggle.")
+async def set_everywhere_cmd(ctx, state: bool | None = None):
+    """Set everywhere toggle."""
+    global send_message_everywhere
+    guild = ctx.guild or None
+    if roles_check(ctx.user, guild, [rubicon_control_role, rubicon_elevated_role]):
+        if state is not None:
+             send_message_everywhere = state
+        else:
+             send_message_everywhere = not send_message_everywhere 
+        print(f"{FM.info} Responding in all channels: {send_message_everywhere}")
+        await ctx.response.send_message(f"Responding in all channels: {'Yes' if send_message_everywhere else 'No'}")
+    else:
+        print(f"{FM.info} User {ctx.user.display_name} ({ctx.user.id}) does not have high enough permissions to run set_everywhere.")
+        await ctx.response.send_message(f"{ctx.user.display_name}, you do not have high enough permissions to run this command.")
+
+@tree.command(name="set_temperature", description="Set the temperature of Rubicon's AI.")
+async def set_temperature_cmd(ctx, new_temperature: float = 0.2):
+    """Set the temperature of Rubicon's AI."""
+    global temperature
+    guild = ctx.guild or None
+    if roles_check(ctx.user, guild, [rubicon_control_role, rubicon_elevated_role]):
+        old_temp = temperature
+        print(f"{FM.info} Setting temperature to {new_temperature} (previously {old_temp}).")
+        temperature = new_temperature
+        await ctx.response.send_message(f"Set temperature to {new_temperature} (previously {old_temp}).")
+    else:
+        print(f"{FM.info} User {ctx.user.display_name} ({ctx.user.id}) does not have high enough permissions to run set_temperature.")
+        await ctx.response.send_message(f"{ctx.user.display_name}, you do not have high enough permissions to run this command.")
+
+@tree.command(name="set_model", description="Set the model Rubicon uses. (Dangerous.)")
+async def set_model_cmd(ctx, new_model: str = "llama3-70b-8192"):
+    global current_model
+    guild = ctx.guild or None
+    if roles_check(ctx.user, guild, [rubicon_control_role, rubicon_elevated_role]):
+        old_model = current_model
+        if new_model not in ai_models:
+            FM.header_warn("Model not found", "The model specified as the default model for Rubicon is not found. Defaulting to 'llama3-70b-8192'.")
+            current_model = "llama3-70b-8192" # Default model.
+            ctx.response.send_message("Model not found. Defaulting to 'llama3-70b-8192'.")
+            return
+        print(f"{FM.info} Setting model to {new_model} (previously {old_model}).")
+        current_model = new_model
+        await ctx.response.send_message(f"Set model to {new_model} (previously {old_model}).")
+    else:
+        print(f"{FM.info} User {ctx.user.display_name} ({ctx.user.id}) does not have high enough permissions to run set_model.")
+        await ctx.response.send_message(f"{ctx.user.display_name}, you do not have high enough permissions to run this command.")
+
+@tree.command(name="set_max_tokens", description="Set the maximum number of tokens Rubicon can remember.")
+async def set_max_tokens_cmd(ctx, new_max_tokens: int = 8192):
+    """Set the maximum number of tokens Rubicon can remember."""
+    global maximum_tokens
+    guild = ctx.guild or None
+    if roles_check(ctx.user, guild, [rubicon_control_role, rubicon_elevated_role]):
+        old_max_tokens = maximum_tokens
+        print(f"{FM.info} Setting maximum tokens to {new_max_tokens} (previously {old_max_tokens}).")
+        maximum_tokens = new_max_tokens
+        await ctx.response.send_message(f"Set maximum tokens to {new_max_tokens} (previously {old_max_tokens}).")
+    else:
+        print(f"{FM.info} User {ctx.user.display_name} ({ctx.user.id}) does not have high enough permissions to run set_max_tokens.")
+        await ctx.response.send_message(f"{ctx.user.display_name}, you do not have high enough permissions to run this command.")
+
+@tree.command(name="set_top_p", description="Set top_p. Recommended to change temperature instead.")
+async def set_top_p_cmd(ctx, new_top_p: float = 1.0):
+    """Set top_p. Recommended to change temperature instead."""
+    global top_p
+    guild = ctx.guild or None
+    if roles_check(ctx.user, guild, [rubicon_control_role, rubicon_elevated_role]):
+        old_top_p = top_p
+        print(f"{FM.info} Setting top_p to {new_top_p} (previously {old_top_p}).")
+        top_p = new_top_p
+        await ctx.response.send_message(f"Set top_p to {new_top_p} (previously {old_top_p}).")
+    else:
+        print(f"{FM.info} User {ctx.user.display_name} ({ctx.user.id}) does not have high enough permissions to run set_top_p.")
+        await ctx.response.send_message(f"{ctx.user.display_name}, you do not have high enough permissions to run this command.")
+
+@tree.command(name="display_siblings", description="Display the number of siblings.")
+async def display_siblings_cmd(ctx):
+    """Display the number of siblings."""
+    print(f"{FM.info} Current siblings: {sibling_count}")
+    await ctx.response.send_message(f"Current siblings: {sibling_count}.")
+
+@tree.command(name="display_old_siblings", description="Display the last number of siblings. Internal use.")
+async def display_old_siblings_cmd(ctx):
+    """Display the last number of siblings. Internal use."""
+    guild = ctx.guild or None
+    if roles_check(ctx.user, guild, [rubicon_control_role, rubicon_elevated_role]):
+        print(f"{FM.info} Last siblings: {sibling_count}")
+        await ctx.response.send_message(f"Last siblings: {sibling_count}.")
+    else:
+        print(f"{FM.info} User {ctx.user.display_name} ({ctx.user.id}) does not have high enough permissions to run display_old_siblings.")
+        await ctx.response.send_message(f"{ctx.user.display_name}, you do not have high enough permissions to run this command.")
+
+@tree.command(name="set_special_character", description="Set the special character that you start a message off with.")
+async def set_special_character_cmd(ctx, new_special_character: str = "^"):
+    """Set the special character that you start a message off with."""
+    global special_character
+    guild = ctx.guild or None
+    if roles_check(ctx.user, guild, [rubicon_control_role, rubicon_elevated_role]):
+        old_special_character = special_character
+        print(f"{FM.info} Setting special character to {new_special_character} (previously {old_special_character}).")
+        special_character = new_special_character
+        await ctx.response.send_message(f"Set special character to {new_special_character} (previously {old_special_character}).")
+    else:
+        print(f"{FM.info} User {ctx.user.display_name} ({ctx.user.id}) does not have high enough permissions to run set_special_character.")
+        await ctx.response.send_message(f"{ctx.user.display_name}, you do not have high enough permissions to run this command.")
+
+@tree.command(name="set_rand_msg_chance", description="Set the chance for a random message. Default: 1/50.")
+async def set_rand_msg_chance_cmd(ctx, new_rand_msg_chance: int = 50):
+    """Set the chance for a random message. Default: 1/50."""
+    global random_message_chance
+    guild = ctx.guild or None
+    if roles_check(ctx.user, guild, [rubicon_control_role, rubicon_elevated_role]):
+        old_rand_msg_chance = random_message_chance
+        print(f"{FM.info} Setting random message chance to {new_rand_msg_chance} (previously {old_rand_msg_chance}).")
+        random_message_chance = new_rand_msg_chance
+        await ctx.response.send_message(f"Set random message chance to {new_rand_msg_chance} (previously {old_rand_msg_chance}).")
+    else:
+        print(f"{FM.info} User {ctx.user.display_name} ({ctx.user.id}) does not have high enough permissions to run set_rand_msg_chance.")
+        await ctx.response.send_message(f"{ctx.user.display_name}, you do not have high enough permissions to run this command.")
+    
+@tree.command(name="add_sib_on_crash", description="Toggle adding a sibling when Rubicon crashes.")
+async def add_sib_on_crash_cmd(ctx, state: bool | None = None):
+    """Toggle adding a sibling when Rubicon crashes."""
+    global increment_siblings_on_die
+    guild = ctx.guild or None
+    if roles_check(ctx.user, guild, [rubicon_control_role, rubicon_elevated_role]):
+        if state is not None:
+            increment_siblings_on_die = state
+        else:
+            increment_siblings_on_die = not increment_siblings_on_die
+        print(f"{FM.info} Increment siblings on die: {increment_siblings_on_die}")
+        await ctx.response.send_message(f"Increment siblings on die: {increment_siblings_on_die}")
+    else:
+        print(f"{FM.info} User {ctx.user.display_name} ({ctx.user.id}) does not have high enough permissions to run add_sib_on_crash.")
+        await ctx.response.send_message(f"{ctx.user.display_name}, you do not have high enough permissions to run this command.")
+
+@tree.command(name="aggressive_errors", description="Toggle aggressive error handling, which clears memory when Rubicon crashes.")
+async def aggressive_errors_cmd(ctx, state: bool | None = None):
+    """Toggle aggressive error handling, which clears memory when Rubicon crashes."""
+    global aggressive_error_handling
+    guild = ctx.guild or None
+    if roles_check(ctx.user, guild, [rubicon_control_role, rubicon_elevated_role]):
+        if state is not None:
+            aggressive_error_handling = state
+        else:
+            aggressive_error_handling = not aggressive_error_handling
+        print(f"{FM.info} Aggressive error handling: {aggressive_error_handling}")
+        await ctx.response.send_message(f"Aggressive error handling: {aggressive_error_handling}")
+    else:
+        print(f"{FM.info} User {ctx.user.display_name} ({ctx.user.id}) does not have high enough permissions to run aggressive_errors.")
         await ctx.response.send_message(f"{ctx.user.display_name}, you do not have high enough permissions to run this command.")
 
 # Discord (App Commands (Control))
