@@ -1,6 +1,6 @@
 ###############################################################################################################################################
 ##                                                                                                                                           ##
-##                                                            RUBICON - V:3.14.2.1                                                           ##
+##                                                            RUBICON - V:3.14.2.2                                                           ##
 ##                                                Your absolutely nuts silicion-based friend.                                                ##
 ##                                                                                                                                           ##
 ##                                           Created by Destiny (Copper (FateUnix29), @destiny_29)                                           ##
@@ -41,7 +41,7 @@ This, of course, may cause errors. The version of your Python interpreter is {ve
 
 ### Constants ###
 
-_ver = "3.14.2.1"
+_ver = "3.14.2.2"
 
 ###  Globals  ###
 
@@ -390,7 +390,7 @@ async def on_message(message):
     # Right now, right here, is where we need to figure out if we're going to early-return or not.
     # Based on Rubicon-all. God, I hate this implementation.
     if rubi_all_object and message.channel == rubi_all_object:
-        await rubicon_all_handling(message.author.display_name, message.content, message.guild.name)
+        await rubicon_all_handling(message.author.display_name, msgcontent, message.guild.name)
         # Mode forced 1. Rubicon shouldn't respond if special character not present.
         if not message_has_special_character:
             return
