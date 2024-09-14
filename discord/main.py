@@ -1,6 +1,6 @@
 ###############################################################################################################################################
 ##                                                                                                                                           ##
-##                                                            RUBICON - V:3.14.1.2                                                           ##
+##                                                            RUBICON - V:3.14.2.1                                                           ##
 ##                                                Your absolutely nuts silicion-based friend.                                                ##
 ##                                                                                                                                           ##
 ##                                           Created by Destiny (Copper (FateUnix29), @destiny_29)                                           ##
@@ -41,7 +41,7 @@ This, of course, may cause errors. The version of your Python interpreter is {ve
 
 ### Constants ###
 
-_ver = "3.14.1.2"
+_ver = "3.14.2.1"
 
 ###  Globals  ###
 
@@ -76,6 +76,7 @@ aggressive_error_handling = True                         # Does Rubicon attempt 
 respond_in_all_channels = False                          # Does Rubicon respond to a message in any channel? If false, only responds to messages in rubicon-general.
 target_channel_name = "rubicon-general"                  # If respond_in_all_channels is False, this is the name of the channel to respond in.
 conjoined_channel_name = "rubicon-all"                   # Same as target_channel_name, but it will send messages from this channel in other servers to every other server's rubicon-all.
+rubicon_all_last_user = None                             # Internal use only.
 
 dev_mode = False                                         # Does Rubicon run in dev mode? Meaning, it doesn't send out boot pings.
 
@@ -304,7 +305,7 @@ async def on_message(message):
                 pipeindex = restricted_keyword[1].find("|")
                 chance_to_reply = int(restricted_keyword[1][2:pipeindex])
                 if random.randint(1, chance_to_reply) == 1:
-                    await message.channel.send(restricted_keyword[1][pipeindex+1:], mention_author=False) 
+                    await message.reply(restricted_keyword[1][pipeindex+1:], mention_author=False) 
                 # do NOT return.
 
     message_has_special_character = False
@@ -588,14 +589,16 @@ def roles_check(user: discord.User, guild: discord.Guild | None = None, roles: l
             
 async def rubicon_all_handling(username: str, message: str, guildname: str):
     """Handles all Rubicon-all related things."""
+    global rubicon_all_last_user # Just making sure it doesn't randomly switch to local scope.
     for guild in guilds_with_rubiconall():
         if guild.name == guildname:
             continue # The message was sent here. Do not send it to the same guild.
         rubi_all_object = discord.utils.get(guild.text_channels, name=conjoined_channel_name) # Always exists, because guilds_with_rubiconall() ensures it exists.
-        totalmessage = f"`({guildname})` **{username}**:\n{message}"
+        totalmessage = f"`({guildname})` **{username}**:\n{message}" if username != rubicon_all_last_user else f"{message}"
         if len(totalmessage) > 2000:
-            totalmessage = totalmessage[0:2000-1] # -1 because 0 indexed
+            totalmessage = totalmessage[0:1999] # 1999 because 0 indexed
         await rubi_all_object.send(totalmessage)
+    rubicon_all_last_user = username
 
 # Discord (App Commands)
 @tree.command(name="save_memory", description="Save's Rubicon's memory to a file.")
