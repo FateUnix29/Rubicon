@@ -1,6 +1,6 @@
 ###############################################################################################################################################
 ##                                                                                                                                           ##
-##                                                            RUBICON - V:3.14.1.1                                                           ##
+##                                                            RUBICON - V:3.14.1.2                                                           ##
 ##                                                Your absolutely nuts silicion-based friend.                                                ##
 ##                                                                                                                                           ##
 ##                                           Created by Destiny (Copper (FateUnix29), @destiny_29)                                           ##
@@ -41,7 +41,7 @@ This, of course, may cause errors. The version of your Python interpreter is {ve
 
 ### Constants ###
 
-_ver = "3.14.1.1"
+_ver = "3.14.1.2"
 
 ###  Globals  ###
 
@@ -279,7 +279,10 @@ async def on_message(message):
     global last_message, conversation, sibling_count
 
     if message.author == client.user: last_message = message; return # Don't respond to ourselves. But, just incase we need it, also set last_message to the message.
-    if not message.content: print(f"{FM.warning} Message somehow had no content. This is rather concerning. Returning."); return
+    if not message.content:
+        has_attachments = True if message.attachments else False
+        print(f"{FM.warning} Message had no content. {'Returning.' if not has_attachments else 'Continuing, attachments.'}")
+        if not has_attachments: return
 
     # Moderation
     # Rubicon 3 takes on the role of a silent moderator. It spies on messages and flags ones with specific keywords.
