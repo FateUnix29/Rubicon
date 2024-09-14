@@ -16,7 +16,7 @@ import discord                                                 # Discord API.
 from discord import app_commands                               # This allows for slash commands.
 import groq                                                    # Groq API. This is the AI part of Rubicon.
 import random, os                                              # Random and OS.
-#import threading                                               # As of Rubicon V:3.*, we are attempting to use threads to have CLI input and speed up the bot.
+#import threading                                              # As of Rubicon V:3.*, we are attempting to use threads to have CLI input and speed up the bot.
 import sys                                                     # System.
 from os import getenv                                          # Environment variables, because as of V:3.*, I finally bother to use non-hardcoded (and slightly encrypted) keys.
 import utilities as utils                                      # Utilities; Functions and classes.
@@ -77,7 +77,7 @@ respond_in_all_channels = False                          # Does Rubicon respond 
 target_channel_name = "rubicon-general"                  # If respond_in_all_channels is False, this is the name of the channel to respond in.
 conjoined_channel_name = "rubicon-all"                   # Same as target_channel_name, but it will send messages from this channel in other servers to every other server's rubicon-all.
 
-dev_mode = True                                          # Does Rubicon run in dev mode? Meaning, it doesn't send out boot pings.
+dev_mode = False                                         # Does Rubicon run in dev mode? Meaning, it doesn't send out boot pings.
 
 rubicon_control_role = "Rubicon Control"                 # Control role.
 rubicon_elevated_role = "Rubicon Elevated"               # Elevated role.
