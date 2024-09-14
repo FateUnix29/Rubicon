@@ -1,6 +1,6 @@
 ###############################################################################################################################################
 ##                                                                                                                                           ##
-##                                                            RUBICON - V:3.10.0.6                                                           ##
+##                                                            RUBICON - V:3.12.0.0                                                           ##
 ##                                                Your absolutely nuts silicion-based friend.                                                ##
 ##                                                                                                                                           ##
 ##                                           Created by Destiny (Copper (FateUnix29), @destiny_29)                                           ##
@@ -41,7 +41,7 @@ This, of course, may cause errors. The version of your Python interpreter is {ve
 
 ### Constants ###
 
-_ver = "3.10.0.6"
+_ver = "3.12.0.0"
 
 ###  Globals  ###
 
@@ -74,7 +74,8 @@ send_message_everywhere = False                          # Does Rubicon send it'
 last_message = None                                      # Incase we need it.
 aggressive_error_handling = True                         # Does Rubicon attempt to clear it's memory with no confirmation if it encounters an error?
 respond_in_all_channels = False                          # Does Rubicon respond to a message in any channel? If false, only responds to messages in rubicon-general.
-target_channel_name = "rubicon-general"                  # If respond_in_all_channels is False, this is the name of the channel to respond in. 
+target_channel_name = "rubicon-general"                  # If respond_in_all_channels is False, this is the name of the channel to respond in.
+conjoined_channel_name = "rubicon-all"                   # Same as target_channel_name, but it will send messages from this channel in other servers to every other server's rubicon-all.
 
 dev_mode = True                                          # Does Rubicon run in dev mode? Meaning, it doesn't send out boot pings.
 
@@ -304,19 +305,35 @@ async def on_message(message):
                 return
 
     message_has_special_character = False
+    override_channel_is_all = False
     if message.content.startswith(special_character):
         # The behavior of Rubicon's response when the message starts with this character is not set in stone anymore.
         # It either blocks the message or lets it through based on a new 'mode' feature in Rubicon 3.
 
         # Set the flag:
         message_has_special_character = True
+        # Rubicon-All checking system. Mode is forced to 1 if sent in #rubicon-all. Additionally, regardless of responding rules, the message *must* be handled, not by returning.
+        rubi_all_object = discord.utils.get(message.guild.text_channels, name=conjoined_channel_name)
+        if rubi_all_object and message.channel == rubi_all_object:
+            override_channel_is_all = True # Never return early.
+            # This is it for this entire check. The handling happens later, no matter if it has a special character or not.
+        
         # Check if we're on blacklist, which is the default:
-        if respond_by_default: # If it responds by default, which means this message is intended to be *excluded* from Rubicon.
+        if respond_by_default and not override_channel_is_all: # If it responds by default, which means this message is intended to be *excluded* from Rubicon.
+            #if rubi_all_object and message.channel == rubi_all_object:
+            #    # Once again (first occurance later, welcome to comment time-traveling), theres a special rubicon-all case here.
+            #    # Remove the special character.
+            #    msgcontent = message.content[1:].strip()
+            #    await rubicon_all_handling(message.author.display_name, msgcontent, message.guild.name)
+            #else:
+            #    # We return if rubi_all_object doesnt exist or message channel isn't rubicon_all_object, so we don't need to elif.
+            #    print(f"{FM.info} Rubicon message content returning, info: {'channel exists' if rubi_all_object else 'channel does not exist'}, message is rubiall: {message.channel == rubi_all_object}")
+            #    return
             return
         else:
             # This is a bit different. We need to keep going, and we need to remove the character.
             message.content = message.content[1:]
-    if not respond_by_default and not message_has_special_character:
+    if not respond_by_default and not message_has_special_character and not override_channel_is_all:
         # A further continuation of the special character logic.
         # This message doesn't have the special character and we don't respond by default. Return.
         return
@@ -346,15 +363,24 @@ async def on_message(message):
                 # Bypass this check.
                 check_bypass = True
             rubi_general_object = discord.utils.get(message.guild.text_channels, name=target_channel_name)
+            #rubi_all_object     = discord.utils.get(message.guild.text_channels, name=conjoined_channel_name)
             if rubi_general_object and message.channel != rubi_general_object and not check_bypass:
-                # If #rubicon-general exists, if message.channel isn't #rubicon-general, and there is no bypass.
                 return
             elif not rubi_general_object:
                 print(f"{FM.warning} Server '{message.guild.name}' ({message.guild.id}) has no '{target_channel_name}' channel.")
+                return
 
         print(f"{FM.blue}{message.author.display_name} ({message.author.name}, {message.author.id}, {message.channel}, {message.guild.name}):\n{message.content}")
     else:
         print(f"{FM.blue}{message.author.display_name} ({message.author.name}, {message.author.id}, {message.channel}):\n{message.content}")
+    # Now or never.
+    # Right now, right here, is where we need to figure out if we're going to early-return or not.
+    # Based on Rubicon-all. God, I hate this implementation.
+    if rubi_all_object and message.channel == rubi_all_object:
+        rubicon_all_handling(message.author.display_name, message.content, message.guild.name)
+        # Mode forced 1. Rubicon shouldn't respond if special character not present.
+        if not message_has_special_character:
+            return
     try:
         response = utils.prompt_ai(message.content, message.author, message.channel, conversation, True, current_model, temperature, top_p, maximum_tokens,
                                    ["</s>", "[Inst]"], groq_api_key, True if message.guild else False)
@@ -405,7 +431,8 @@ Try again in a few moments."
                 await rubi_general_object.send(response)
             elif not rubi_general_object:
                 print(f"{FM.warning} Server '{message.guild.name}' ({message.guild.id}) has no '{target_channel_name}' channel. (Not sending a response there.)")
-
+    if override_channel_is_all:
+        rubicon_all_handling(client.user.display_name, response, message.guild.name)
 # Discord (General)
 
 def get_guilds_id_from_file() -> list[int]:
@@ -476,7 +503,11 @@ async def leave_all_unauthorized_guilds(current_guilds: list[discord.Guild]) -> 
 
 def guilds_with_rubicongeneral() -> list[discord.Guild]:
     """Returns all guilds with a channel named 'Rubicon General' (rubicon-general)."""
-    return [guild for guild in client.guilds if "rubicon-general" in [channel.name for channel in guild.text_channels]]
+    return [guild for guild in client.guilds if target_channel_name in [channel.name for channel in guild.text_channels]]
+
+def guilds_with_rubiconall() -> list[discord.Guild]:
+    """Returns all guilds with a channel named 'Rubicon All' (rubicon-all)."""
+    return [guild for guild in client.guilds if conjoined_channel_name in [channel.name for channel in guild.text_channels]]
 
 def guilds_with_rubiconsystem() -> list[discord.Guild]:
     """Returns all guilds with a channel named 'Rubicon System Messages' (rubicon-system-messages)."""
@@ -543,6 +574,13 @@ def roles_check(user: discord.User, guild: discord.Guild | None = None, roles: l
     # User does not meet at least one role for mode 1. All other modes would have returned already.
     return 0
             
+async def rubicon_all_handling(username: str, message: str, guildname: str):
+    """Handles all Rubicon-all related things."""
+    for guild in guilds_with_rubiconall():
+        if guild.name == guildname:
+            continue # The message was sent here. Do not send it to the same guild.
+        rubi_all_object = discord.utils.get(guild.text_channels, name=conjoined_channel_name) # Always exists, because guilds_with_rubiconall() ensures it exists.
+        await rubi_all_object.send(f"`({guildname})` **{username}**:\n{message}")
 
 # Discord (App Commands)
 @tree.command(name="save_memory", description="Save's Rubicon's memory to a file.")
@@ -890,22 +928,27 @@ async def aggressive_errors_cmd(ctx, state: bool | None = None):
 
 # Discord (App Commands (Control))
 @tree.command(name="initialize_roles_channels", description="Adds roles and channels to a specified server if it doesn't have them.", guild=client.get_guild(1234052712950136923))
-async def initialize_roles_channels(ctx, guild_id: int):
+async def initialize_roles_channels(ctx, guild_id: str):
     """Adds roles and channels to a specified server if it doesn't have them."""
+    if not guild_id.isdigit():
+        print(f"{FM.info} Invalid guild ID (initialize_roles_channels, {guild_id}).")
+        await ctx.response.send_message("Invalid guild ID.")
+        return
+
     if roles_check(ctx.user, ctx.guild, [rubicon_control_role]):
         print(f"{FM.info} Initializing roles and channels.")
         await ctx.response.send_message("Initializing roles and channels.")
         # Get the guild.
-        target_guild = client.get_guild(guild_id)
+        target_guild = client.get_guild(int(guild_id))
         # Add the channels rubicon-general and rubicon-system-messages.
-        await target_guild.create_text_channel("rubicon-general", reason="Rubi Init: rubicon-general is where Rubicon chats with people!")
-        await target_guild.create_text_channel("rubicon-system-messages", reason="Rubi Init: Rubicon is changing the server to function at maximum!")
+        if not discord.utils.get(target_guild.text_channels, name="rubicon-general"): await target_guild.create_text_channel("rubicon-general", reason="Rubi Init: rubicon-general is where Rubicon chats with people!")
+        if not discord.utils.get(target_guild.text_channels, name="rubicon-system-messages"): await target_guild.create_text_channel("rubicon-system-messages", reason="Rubi Init: Rubicon is changing the server to function at maximum!")
         # Add the roles Rubicon Boot Ping, Rubicon Announcements, Rubicon Control, Rubicon Elevated, and No Rubicon.
-        await target_guild.create_role(name="Rubicon Boot Ping", color=0x9e42e0, reason="Rubi Init: Rubicon is changing the server to function at maximum!")
-        await target_guild.create_role(name="Rubicon Announcements", color=0x99ccff, reason="Rubi Init: Rubicon is changing the server to function at maximum!")
-        await target_guild.create_role(name="Rubicon Control", color=0x3498db, reason="Rubi Init: Rubicon is changing the server to function at maximum!")
-        await target_guild.create_role(name="Rubicon Elevated", color=0xe67e22, reason="Rubi Init: Rubicon is changing the server to function at maximum!")
-        await target_guild.create_role(name="No Rubicon", color=0xe74c3c, reason="Rubi Init: Rubicon is changing the server to function at maximum!")
+        if not discord.utils.get(target_guild.roles, name="Rubicon Boot Ping"): await target_guild.create_role(name="Rubicon Boot Ping", color=0x9e42e0, reason="Rubi Init: Rubicon is changing the server to function at maximum!")
+        if not discord.utils.get(target_guild.roles, name="Rubicon Announcements"): await target_guild.create_role(name="Rubicon Announcements", color=0x99ccff, reason="Rubi Init: Rubicon is changing the server to function at maximum!")
+        if not discord.utils.get(target_guild.roles, name="Rubicon Control"): await target_guild.create_role(name="Rubicon Control", color=0x3498db, reason="Rubi Init: Rubicon is changing the server to function at maximum!")
+        if not discord.utils.get(target_guild.roles, name="Rubicon Elevated"): await target_guild.create_role(name="Rubicon Elevated", color=0xe67e22, reason="Rubi Init: Rubicon is changing the server to function at maximum!")
+        if not discord.utils.get(target_guild.roles, name="No Rubicon"): await target_guild.create_role(name="No Rubicon", color=0xe74c3c, reason="Rubi Init: Rubicon is changing the server to function at maximum!")
         print(f"{FM.info} Roles and channels initialized.")
         await ctx.channel.send("Roles and channels initialized.")
     else:
@@ -913,8 +956,12 @@ async def initialize_roles_channels(ctx, guild_id: int):
         await ctx.response.send_message(f"{ctx.user.display_name}, you do not have high enough permissions to run this command.")
 
 @tree.command(name="cleanup_roles_channels", description="Removes roles and channels from a specified server if they exist.", guild=client.get_guild(1234052712950136923))
-async def cleanup_roles_channels(ctx, guild_id: int, leave: bool = True):
+async def cleanup_roles_channels(ctx, guild_id: str, leave: bool = True):
     """Removes roles and channels from a specified server if they exist."""
+    if not guild_id.isdigit():
+        print(f"{FM.info} Invalid guild ID (initialize_roles_channels, {guild_id}).")
+        await ctx.response.send_message("Invalid guild ID.")
+        return
     if roles_check(ctx.user, ctx.guild, [rubicon_control_role]):
         print(f"{FM.info} Cleaning up roles and channels.")
         await ctx.response.send_message("Cleaning up roles and channels.")
