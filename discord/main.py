@@ -1,6 +1,6 @@
 ###############################################################################################################################################
 ##                                                                                                                                           ##
-##                                                            RUBICON - V:3.14.1.0                                                           ##
+##                                                            RUBICON - V:3.14.1.1                                                           ##
 ##                                                Your absolutely nuts silicion-based friend.                                                ##
 ##                                                                                                                                           ##
 ##                                           Created by Destiny (Copper (FateUnix29), @destiny_29)                                           ##
@@ -41,7 +41,7 @@ This, of course, may cause errors. The version of your Python interpreter is {ve
 
 ### Constants ###
 
-_ver = "3.14.1.0"
+_ver = "3.14.1.1"
 
 ###  Globals  ###
 
@@ -589,9 +589,10 @@ async def rubicon_all_handling(username: str, message: str, guildname: str):
         if guild.name == guildname:
             continue # The message was sent here. Do not send it to the same guild.
         rubi_all_object = discord.utils.get(guild.text_channels, name=conjoined_channel_name) # Always exists, because guilds_with_rubiconall() ensures it exists.
-        if len(message) > 2000:
-            message = message[0:2000-1] # -1 because 0 indexed
-        await rubi_all_object.send(f"`({guildname})` **{username}**:\n{message}")
+        totalmessage = f"`({guildname})` **{username}**:\n{message}"
+        if len(totalmessage) > 2000:
+            totalmessage = totalmessage[0:2000-1] # -1 because 0 indexed
+        await rubi_all_object.send(totalmessage)
 
 # Discord (App Commands)
 @tree.command(name="save_memory", description="Save's Rubicon's memory to a file.")
