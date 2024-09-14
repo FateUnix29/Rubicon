@@ -1,6 +1,6 @@
 ###############################################################################################################################################
 ##                                                                                                                                           ##
-##                                                            RUBICON - V:3.14.2.3                                                           ##
+##                                                            RUBICON - V:3.14.2.4                                                           ##
 ##                                                Your absolutely nuts silicion-based friend.                                                ##
 ##                                                                                                                                           ##
 ##                                           Created by Destiny (Copper (FateUnix29), @destiny_29)                                           ##
@@ -41,7 +41,7 @@ This, of course, may cause errors. The version of your Python interpreter is {ve
 
 ### Constants ###
 
-_ver = "3.14.2.3"
+_ver = "3.14.2.4"
 
 ###  Globals  ###
 
@@ -384,12 +384,12 @@ async def on_message(message):
         for attachment in message.attachments:
             msgcontent += f"\n{attachment.url}"
 
+    msgcontent = msgcontent.strip() # Leading and trailing newlines and whitespace.
     print(f"{FM.light_blue}{message.author.display_name} ({message.author.name}, {message.author.id}, {FM.light_yellow if rubi_all_object and message.channel == rubi_all_object else ""}{message.channel}{FM.light_blue if rubi_all_object and message.channel == rubi_all_object else ""}, {message.guild.name if guild_available else "Unknown Server"}):\n{msgcontent}")
 
     # Now or never.
     # Right now, right here, is where we need to figure out if we're going to early-return or not.
     # Based on Rubicon-all. God, I hate this implementation.
-    msgcontent = msgcontent.strip() # Leading and trailing newlines and whitespace.
     if rubi_all_object and message.channel == rubi_all_object:
         await rubicon_all_handling(message.author.display_name, msgcontent, message.guild.name)
         # Mode forced 1. Rubicon shouldn't respond if special character not present.
