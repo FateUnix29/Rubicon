@@ -1,6 +1,6 @@
 ###############################################################################################################################################
 ##                                                                                                                                           ##
-##                                                            RUBICON - V:3.13.1.1                                                           ##
+##                                                            RUBICON - V:3.13.1.2                                                           ##
 ##                                                Your absolutely nuts silicion-based friend.                                                ##
 ##                                                                                                                                           ##
 ##                                           Created by Destiny (Copper (FateUnix29), @destiny_29)                                           ##
@@ -41,7 +41,7 @@ This, of course, may cause errors. The version of your Python interpreter is {ve
 
 ### Constants ###
 
-_ver = "3.13.1.1"
+_ver = "3.13.1.2"
 
 ###  Globals  ###
 
@@ -375,9 +375,9 @@ async def on_message(message):
                 msgcontent2 = msgcontent1
         msgcontent = msgcontent2
 
-        print(f"{FM.blue}{message.author.display_name} ({message.author.name}, {message.author.id}, {FM.light_yellow if rubi_all_object and message.channel == rubi_all_object else ""}{message.channel}{FM.blue if rubi_all_object and message.channel == rubi_all_object else ""}, {message.guild.name}):\n{msgcontent}")
+        print(f"{FM.light_blue}{message.author.display_name} ({message.author.name}, {message.author.id}, {FM.light_yellow if rubi_all_object and message.channel == rubi_all_object else ""}{message.channel}{FM.light_blue if rubi_all_object and message.channel == rubi_all_object else ""}, {message.guild.name}):\n{msgcontent}")
     else:
-        print(f"{FM.blue}{message.author.display_name} ({message.author.name}, {message.author.id}, {message.channel}):\n{msgcontent}")
+        print(f"{FM.light_blue}{message.author.display_name} ({message.author.name}, {message.author.id}, {message.channel}):\n{msgcontent}")
     # Now or never.
     # Right now, right here, is where we need to figure out if we're going to early-return or not.
     # Based on Rubicon-all. God, I hate this implementation.
@@ -389,7 +389,7 @@ async def on_message(message):
     try:
         response = utils.prompt_ai(msgcontent, message.author, message.channel, conversation, True, current_model, temperature, top_p, maximum_tokens,
                                    ["</s>", "[Inst]"], groq_api_key, True if message.guild else False)
-        print(f"{FM.yellow}Rubicon:\n{response}")
+        print(f"{FM.light_yellow}Rubicon:\n{response}")
         conversation.append({"role": "assistant", "content": response})
     except groq.RateLimitError as e:
         if not aggressive_error_handling:
