@@ -124,10 +124,10 @@ async def user_id_fuzzymatching(message: str, client: discord.Client):
     """Uses RegEx to find and replace all pings (relating to a user) (<@user>) with their display name."""
     pattern = r"\<@\d+\>"
     if re.match(pattern, message):
-        return re.sub(pattern, await _try_get_user(int(message[2:-1]), client), message)
+        return re.sub(pattern, await _try_get_user(int(message[2:-2]), client), message)
 
 async def role_id_fuzzymatching(message: str, guild: discord.Guild):
     """Uses RegEx to find and replace all pings (relating to a role) (<@&role>) with their name."""
     pattern = r"\<@\&\d+\>"
     if re.match(pattern, message):
-        return re.sub(pattern, await _try_get_role(int(message[3:-1]), guild), message)
+        return re.sub(pattern, await _try_get_role(int(message[3:-2]), guild), message)
