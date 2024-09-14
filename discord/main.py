@@ -1,6 +1,6 @@
 ###############################################################################################################################################
 ##                                                                                                                                           ##
-##                                                            RUBICON - V:3.13.1.2                                                           ##
+##                                                            RUBICON - V:3.13.2.0                                                           ##
 ##                                                Your absolutely nuts silicion-based friend.                                                ##
 ##                                                                                                                                           ##
 ##                                           Created by Destiny (Copper (FateUnix29), @destiny_29)                                           ##
@@ -41,7 +41,7 @@ This, of course, may cause errors. The version of your Python interpreter is {ve
 
 ### Constants ###
 
-_ver = "3.13.1.2"
+_ver = "3.13.2.0"
 
 ###  Globals  ###
 
@@ -301,8 +301,8 @@ async def on_message(message):
                 pipeindex = restricted_keyword[1].find("|")
                 chance_to_reply = int(restricted_keyword[1][2:pipeindex])
                 if random.randint(1, chance_to_reply) == 1:
-                    await message.reply(restricted_keyword[1][pipeindex+1:], mention_author=False) 
-                return
+                    await message.channel.send(restricted_keyword[1][pipeindex+1:], mention_author=False) 
+                # do NOT return.
 
     message_has_special_character = False
     override_channel_is_all = False
