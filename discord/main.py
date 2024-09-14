@@ -1,6 +1,6 @@
 ###############################################################################################################################################
 ##                                                                                                                                           ##
-##                                                            RUBICON - V:3.12.0.0                                                           ##
+##                                                            RUBICON - V:3.12.0.4                                                           ##
 ##                                                Your absolutely nuts silicion-based friend.                                                ##
 ##                                                                                                                                           ##
 ##                                           Created by Destiny (Copper (FateUnix29), @destiny_29)                                           ##
@@ -41,7 +41,7 @@ This, of course, may cause errors. The version of your Python interpreter is {ve
 
 ### Constants ###
 
-_ver = "3.12.0.0"
+_ver = "3.12.0.4"
 
 ###  Globals  ###
 
@@ -306,6 +306,7 @@ async def on_message(message):
 
     message_has_special_character = False
     override_channel_is_all = False
+    rubi_all_object = discord.utils.get(message.guild.text_channels, name=conjoined_channel_name)
     if message.content.startswith(special_character):
         # The behavior of Rubicon's response when the message starts with this character is not set in stone anymore.
         # It either blocks the message or lets it through based on a new 'mode' feature in Rubicon 3.
@@ -313,22 +314,12 @@ async def on_message(message):
         # Set the flag:
         message_has_special_character = True
         # Rubicon-All checking system. Mode is forced to 1 if sent in #rubicon-all. Additionally, regardless of responding rules, the message *must* be handled, not by returning.
-        rubi_all_object = discord.utils.get(message.guild.text_channels, name=conjoined_channel_name)
         if rubi_all_object and message.channel == rubi_all_object:
             override_channel_is_all = True # Never return early.
             # This is it for this entire check. The handling happens later, no matter if it has a special character or not.
         
         # Check if we're on blacklist, which is the default:
         if respond_by_default and not override_channel_is_all: # If it responds by default, which means this message is intended to be *excluded* from Rubicon.
-            #if rubi_all_object and message.channel == rubi_all_object:
-            #    # Once again (first occurance later, welcome to comment time-traveling), theres a special rubicon-all case here.
-            #    # Remove the special character.
-            #    msgcontent = message.content[1:].strip()
-            #    await rubicon_all_handling(message.author.display_name, msgcontent, message.guild.name)
-            #else:
-            #    # We return if rubi_all_object doesnt exist or message channel isn't rubicon_all_object, so we don't need to elif.
-            #    print(f"{FM.info} Rubicon message content returning, info: {'channel exists' if rubi_all_object else 'channel does not exist'}, message is rubiall: {message.channel == rubi_all_object}")
-            #    return
             return
         else:
             # This is a bit different. We need to keep going, and we need to remove the character.
@@ -365,19 +356,22 @@ async def on_message(message):
             rubi_general_object = discord.utils.get(message.guild.text_channels, name=target_channel_name)
             #rubi_all_object     = discord.utils.get(message.guild.text_channels, name=conjoined_channel_name)
             if rubi_general_object and message.channel != rubi_general_object and not check_bypass:
-                return
+                if rubi_all_object and message.channel != rubi_all_object:
+                    return
+                elif not rubi_all_object:
+                    return
             elif not rubi_general_object:
                 print(f"{FM.warning} Server '{message.guild.name}' ({message.guild.id}) has no '{target_channel_name}' channel.")
                 return
 
-        print(f"{FM.blue}{message.author.display_name} ({message.author.name}, {message.author.id}, {message.channel}, {message.guild.name}):\n{message.content}")
+        print(f"{FM.blue}{message.author.display_name} ({message.author.name}, {message.author.id}, {FM.light_yellow if rubi_all_object and message.channel == rubi_all_object else ""}{message.channel}{FM.blue if rubi_all_object and message.channel == rubi_all_object else ""}, {message.guild.name}):\n{message.content}")
     else:
         print(f"{FM.blue}{message.author.display_name} ({message.author.name}, {message.author.id}, {message.channel}):\n{message.content}")
     # Now or never.
     # Right now, right here, is where we need to figure out if we're going to early-return or not.
     # Based on Rubicon-all. God, I hate this implementation.
     if rubi_all_object and message.channel == rubi_all_object:
-        rubicon_all_handling(message.author.display_name, message.content, message.guild.name)
+        await rubicon_all_handling(message.author.display_name, message.content, message.guild.name)
         # Mode forced 1. Rubicon shouldn't respond if special character not present.
         if not message_has_special_character:
             return
@@ -432,7 +426,7 @@ Try again in a few moments."
             elif not rubi_general_object:
                 print(f"{FM.warning} Server '{message.guild.name}' ({message.guild.id}) has no '{target_channel_name}' channel. (Not sending a response there.)")
     if override_channel_is_all:
-        rubicon_all_handling(client.user.display_name, response, message.guild.name)
+        await rubicon_all_handling(client.user.display_name, response, message.guild.name)
 # Discord (General)
 
 def get_guilds_id_from_file() -> list[int]:
