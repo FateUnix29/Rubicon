@@ -96,29 +96,29 @@ def prompt_ai(message_contents: str, author: discord.User, channel: discord.Text
     ai_response = ai_response[:1999]
     return ai_response
 
-async def _try_get_user(user_id, client: discord.Client):
-    try:
-        username = client.get_user(user_id)
-        if username is None:
-            username = await client.fetch_user(user_id)
-        if username is not None:
-            return f"@{username.display_name}"
-        else:
-            return "@unknown-user"
-    except Exception as e:
-        print(f"{FM.info} Could not find pinged user with ID {user_id}. ({type(e).__name__}: {e})\n{traceback.format_exc()}")
-        return "@unknown-user"
-    
-async def _try_get_role(role_id, guild: discord.Guild):
-    try:
-        rolename = guild.get_role(role_id)
-        if rolename is not None:
-            return f"@{rolename}"
-        if rolename is None:
-            return "@unknown-role"
-    except Exception as e:
-        print(f"{FM.info} Could not find pinged role with ID {role_id}. ({type(e).__name__}: {e})\n{traceback.format_exc()}")
-        return "@unknown-role"
+#async def _try_get_user(user_id, client: discord.Client):
+#    try:
+#        username = client.get_user(user_id)
+#        if username is None:
+#            username = await client.fetch_user(user_id)
+#        if username is not None:
+#            return f"@{username.display_name}"
+#        else:
+#            return "@unknown-user"
+#    except Exception as e:
+#        print(f"{FM.info} Could not find pinged user with ID {user_id}. ({type(e).__name__}: {e})\n{traceback.format_exc()}")
+#        return "@unknown-user"
+#    
+#async def _try_get_role(role_id, guild: discord.Guild):
+#    try:
+#        rolename = guild.get_role(role_id)
+#        if rolename is not None:
+#            return f"@{rolename}"
+#        if rolename is None:
+#            return "@unknown-role"
+#    except Exception as e:
+#        print(f"{FM.info} Could not find pinged role with ID {role_id}. ({type(e).__name__}: {e})\n{traceback.format_exc()}")
+#        return "@unknown-role"
 
 async def user_id_fuzzymatching(message: str, client: discord.Client):
     """Uses RegEx to find and replace all pings (relating to a user) (<@user>) with their display name."""
@@ -175,4 +175,20 @@ async def role_id_fuzzymatching(message: str, guild: discord.Guild):
     #if re.match(pattern, message):
     #    return re.sub(pattern, await _try_get_role(int(message[3:-1]), guild), message)
 
+    return message
+
+def resolve_links(message: str):
+    """Uses RegEx to find attachment links and replace them with their filenames."""
+    pattern = r"https://cdn\.discordapp\.com/attachments/\d+/\d+/[^?]+\.(?:png|jpeg|jpg|gif|bmp|webp|webm|mp4|mp3|ogg|wav|pdf|zip|txt|tar|xz|tar\.xz|tar\.gz|gz|mov|avi|mkv|fbx|brv|brm)\?ex="
+    matches = []
+
+    if re.search(pattern, message):
+        match_iter = re.finditer(pattern, message)
+        for match in match_iter:
+            matches.append((match.group(0)[len("https://cdn.discordapp.com/attachments/")+40:-4], match.group(0)))
+
+    if matches:
+        for match in matches:
+            # Each filename will always have a link. They are in pairs.
+            message = message.replace(match[1], match[0])
     return message

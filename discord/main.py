@@ -1,6 +1,6 @@
 ###############################################################################################################################################
 ##                                                                                                                                           ##
-##                                                            RUBICON - V:3.14.2.4                                                           ##
+##                                                            RUBICON - V:3.15.0.0                                                           ##
 ##                                                Your absolutely nuts silicion-based friend.                                                ##
 ##                                                                                                                                           ##
 ##                                           Created by Destiny (Copper (FateUnix29), @destiny_29)                                           ##
@@ -41,7 +41,7 @@ This, of course, may cause errors. The version of your Python interpreter is {ve
 
 ### Constants ###
 
-_ver = "3.14.2.4"
+_ver = "3.15.0.0"
 
 ###  Globals  ###
 
@@ -78,7 +78,7 @@ target_channel_name = "rubicon-general"                  # If respond_in_all_cha
 conjoined_channel_name = "rubicon-all"                   # Same as target_channel_name, but it will send messages from this channel in other servers to every other server's rubicon-all.
 rubicon_all_last_user = None                             # Internal use only.
 
-dev_mode = False                                         # Does Rubicon run in dev mode? Meaning, it doesn't send out boot pings.
+dev_mode = True                                          # Does Rubicon run in dev mode? Meaning, it doesn't send out boot pings.
 
 rubicon_control_role = "Rubicon Control"                 # Control role.
 rubicon_elevated_role = "Rubicon Elevated"               # Elevated role.
@@ -390,6 +390,7 @@ async def on_message(message):
     # Now or never.
     # Right now, right here, is where we need to figure out if we're going to early-return or not.
     # Based on Rubicon-all. God, I hate this implementation.
+    msgcontent = utils.resolve_links(msgcontent)
     if rubi_all_object and message.channel == rubi_all_object:
         await rubicon_all_handling(message.author.display_name, msgcontent, message.guild.name)
         # Mode forced 1. Rubicon shouldn't respond if special character not present.
