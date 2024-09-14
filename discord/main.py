@@ -1,6 +1,6 @@
 ###############################################################################################################################################
 ##                                                                                                                                           ##
-##                                                            RUBICON - V:3.13.2.0                                                           ##
+##                                                            RUBICON - V:3.14.1.0                                                           ##
 ##                                                Your absolutely nuts silicion-based friend.                                                ##
 ##                                                                                                                                           ##
 ##                                           Created by Destiny (Copper (FateUnix29), @destiny_29)                                           ##
@@ -41,7 +41,7 @@ This, of course, may cause errors. The version of your Python interpreter is {ve
 
 ### Constants ###
 
-_ver = "3.13.2.0"
+_ver = "3.14.1.0"
 
 ###  Globals  ###
 
@@ -364,20 +364,24 @@ async def on_message(message):
                 print(f"{FM.warning} Server '{message.guild.name}' ({message.guild.id}) has no '{target_channel_name}' channel.")
                 return
 
-        msgcontent1 = await utils.user_id_fuzzymatching(message.content, client)
+    msgcontent1 = await utils.user_id_fuzzymatching(message.content, client)
+    msgcontent2 = msgcontent1
+    if not msgcontent1:
+        msgcontent1 = message.content
         msgcontent2 = msgcontent1
-        if not msgcontent1:
-            msgcontent1 = message.content
+    if guild_available:
+        msgcontent2 = await utils.role_id_fuzzymatching(msgcontent1, message.guild)
+        if not msgcontent2:
             msgcontent2 = msgcontent1
-        if guild_available:
-            msgcontent2 = await utils.role_id_fuzzymatching(msgcontent1, message.guild)
-            if not msgcontent2:
-                msgcontent2 = msgcontent1
-        msgcontent = msgcontent2
+    msgcontent = msgcontent2
 
-        print(f"{FM.light_blue}{message.author.display_name} ({message.author.name}, {message.author.id}, {FM.light_yellow if rubi_all_object and message.channel == rubi_all_object else ""}{message.channel}{FM.light_blue if rubi_all_object and message.channel == rubi_all_object else ""}, {message.guild.name}):\n{msgcontent}")
-    else:
-        print(f"{FM.light_blue}{message.author.display_name} ({message.author.name}, {message.author.id}, {message.channel}):\n{msgcontent}")
+    # Attachment handling.
+    if message.attachments:
+        for attachment in message.attachments:
+            msgcontent += f"\n{attachment.url}"
+
+    print(f"{FM.light_blue}{message.author.display_name} ({message.author.name}, {message.author.id}, {FM.light_yellow if rubi_all_object and message.channel == rubi_all_object else ""}{message.channel}{FM.light_blue if rubi_all_object and message.channel == rubi_all_object else ""}, {message.guild.name if guild_available else "Unknown Server"}):\n{msgcontent}")
+
     # Now or never.
     # Right now, right here, is where we need to figure out if we're going to early-return or not.
     # Based on Rubicon-all. God, I hate this implementation.
@@ -585,6 +589,8 @@ async def rubicon_all_handling(username: str, message: str, guildname: str):
         if guild.name == guildname:
             continue # The message was sent here. Do not send it to the same guild.
         rubi_all_object = discord.utils.get(guild.text_channels, name=conjoined_channel_name) # Always exists, because guilds_with_rubiconall() ensures it exists.
+        if len(message) > 2000:
+            message = message[0:2000-1] # -1 because 0 indexed
         await rubi_all_object.send(f"`({guildname})` **{username}**:\n{message}")
 
 # Discord (App Commands)
