@@ -123,11 +123,56 @@ async def _try_get_role(role_id, guild: discord.Guild):
 async def user_id_fuzzymatching(message: str, client: discord.Client):
     """Uses RegEx to find and replace all pings (relating to a user) (<@user>) with their display name."""
     pattern = r"\<@\d+\>"
-    if re.match(pattern, message):
-        return re.sub(pattern, await _try_get_user(int(message[2:-2]), client), message)
+    matches = []
+
+    if re.search(pattern, message):
+        match_iter = re.finditer(pattern, message)
+        for match in match_iter:
+            matches.append(match.group(0)[2:-1])
+    
+    if matches:
+        for user_id in matches:
+            try:
+                username = client.get_user(int(user_id))
+                if username:
+                    message = message.replace(f"<@{user_id}>", f"@{username.display_name}")
+                else:
+                    username = await client.fetch_user(int(user_id))
+                    if username:
+                        message = message.replace(f"<@{user_id}>", f"@{username.display_name}")
+                    else:
+                        message = message.replace(f"<@{user_id}>", f"@unknown-user")
+            except Exception as e:
+                print(f"{FM.info} Could not find pinged user with ID {user_id}. ({type(e).__name__}: {e})\n{traceback.format_exc()}")
+                message = message.replace(f"<@{user_id}>", f"@unknown-user")
+
+    #if re.match(pattern, message):
+    #    return re.sub(pattern, await _try_get_user(int(message[2:-1]), client), message)
+
+    return message
 
 async def role_id_fuzzymatching(message: str, guild: discord.Guild):
     """Uses RegEx to find and replace all pings (relating to a role) (<@&role>) with their name."""
     pattern = r"\<@\&\d+\>"
-    if re.match(pattern, message):
-        return re.sub(pattern, await _try_get_role(int(message[3:-2]), guild), message)
+    matches = []
+
+    if re.search(pattern, message):
+        match_iter = re.finditer(pattern, message)
+        for match in match_iter:
+            matches.append(match.group(0)[3:-1])
+    
+    if matches:
+        for role_id in matches:
+            try:
+                rolename = guild.get_role(int(role_id))
+                if rolename:
+                    message = message.replace(f"<@&{role_id}>", f"@{rolename}")
+                else:
+                    message = message.replace(f"<@&{role_id}>", f"@unknown-role")
+            except Exception as e:
+                print(f"{FM.info} Could not find pinged role with ID {role_id}. ({type(e).__name__}: {e})\n{traceback.format_exc()}")
+                message = message.replace(f"<@&{role_id}>", f"@unknown-role")
+    #if re.match(pattern, message):
+    #    return re.sub(pattern, await _try_get_role(int(message[3:-1]), guild), message)
+
+    return message
