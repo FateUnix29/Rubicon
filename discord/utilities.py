@@ -2,6 +2,8 @@ from builtins import print as print_ins
 
 import discord
 import groq
+import re
+import traceback
 
 class FM:
     reset = '\x1b[0m\x1b[49m'
@@ -93,3 +95,39 @@ def prompt_ai(message_contents: str, author: discord.User, channel: discord.Text
     # Truncate messages to 2000 characters max
     ai_response = ai_response[:1999]
     return ai_response
+
+async def _try_get_user(user_id, client: discord.Client):
+    try:
+        username = client.get_user(user_id)
+        if username is None:
+            username = await client.fetch_user(user_id)
+        if username is not None:
+            return f"@{username.display_name}"
+        else:
+            return "@unknown-user"
+    except Exception as e:
+        print(f"{FM.info} Could not find pinged user with ID {user_id}. ({type(e).__name__}: {e})\n{traceback.format_exc()}")
+        return "@unknown-user"
+    
+async def _try_get_role(role_id, guild: discord.Guild):
+    try:
+        rolename = guild.get_role(role_id)
+        if rolename is not None:
+            return f"@{rolename}"
+        if rolename is None:
+            return "@unknown-role"
+    except Exception as e:
+        print(f"{FM.info} Could not find pinged role with ID {role_id}. ({type(e).__name__}: {e})\n{traceback.format_exc()}")
+        return "@unknown-role"
+
+async def user_id_fuzzymatching(message: str, client: discord.Client):
+    """Uses RegEx to find and replace all pings (relating to a user) (<@user>) with their display name."""
+    pattern = r"\<@\d+\>"
+    if re.match(pattern, message):
+        return re.sub(pattern, await _try_get_user(int(message[2:-1]), client), message)
+
+async def role_id_fuzzymatching(message: str, guild: discord.Guild):
+    """Uses RegEx to find and replace all pings (relating to a role) (<@&role>) with their name."""
+    pattern = r"\<@\&\d+\>"
+    if re.match(pattern, message):
+        return re.sub(pattern, await _try_get_role(int(message[3:-1]), guild), message)

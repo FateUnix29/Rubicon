@@ -1,6 +1,6 @@
 ###############################################################################################################################################
 ##                                                                                                                                           ##
-##                                                            RUBICON - V:3.12.0.4                                                           ##
+##                                                            RUBICON - V:3.13.0.1                                                           ##
 ##                                                Your absolutely nuts silicion-based friend.                                                ##
 ##                                                                                                                                           ##
 ##                                           Created by Destiny (Copper (FateUnix29), @destiny_29)                                           ##
@@ -41,7 +41,7 @@ This, of course, may cause errors. The version of your Python interpreter is {ve
 
 ### Constants ###
 
-_ver = "3.12.0.4"
+_ver = "3.13.0.1"
 
 ###  Globals  ###
 
@@ -364,6 +364,17 @@ async def on_message(message):
                 print(f"{FM.warning} Server '{message.guild.name}' ({message.guild.id}) has no '{target_channel_name}' channel.")
                 return
 
+        msgcontent1 = await utils.user_id_fuzzymatching(message.content, client)
+        msgcontent2 = msgcontent1
+        if not msgcontent1:
+            msgcontent1 = message.content
+            msgcontent2 = msgcontent1
+        if guild_available:
+            msgcontent2 = await utils.role_id_fuzzymatching(msgcontent1, message.guild)
+            if not msgcontent2:
+                msgcontent2 = msgcontent1
+        msgcontent = msgcontent2
+
         print(f"{FM.blue}{message.author.display_name} ({message.author.name}, {message.author.id}, {FM.light_yellow if rubi_all_object and message.channel == rubi_all_object else ""}{message.channel}{FM.blue if rubi_all_object and message.channel == rubi_all_object else ""}, {message.guild.name}):\n{message.content}")
     else:
         print(f"{FM.blue}{message.author.display_name} ({message.author.name}, {message.author.id}, {message.channel}):\n{message.content}")
@@ -376,7 +387,7 @@ async def on_message(message):
         if not message_has_special_character:
             return
     try:
-        response = utils.prompt_ai(message.content, message.author, message.channel, conversation, True, current_model, temperature, top_p, maximum_tokens,
+        response = utils.prompt_ai(msgcontent, message.author, message.channel, conversation, True, current_model, temperature, top_p, maximum_tokens,
                                    ["</s>", "[Inst]"], groq_api_key, True if message.guild else False)
         print(f"{FM.yellow}Rubicon:\n{response}")
         conversation.append({"role": "assistant", "content": response})
