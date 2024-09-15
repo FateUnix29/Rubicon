@@ -1,6 +1,6 @@
 ###############################################################################################################################################
 ##                                                                                                                                           ##
-##                                                            RUBICON - V:3.15.0.1                                                           ##
+##                                                            RUBICON - V:3.15.0.2                                                           ##
 ##                                                Your absolutely nuts silicion-based friend.                                                ##
 ##                                                                                                                                           ##
 ##                                           Created by Destiny (Copper (FateUnix29), @destiny_29)                                           ##
@@ -41,7 +41,7 @@ This, of course, may cause errors. The version of your Python interpreter is {ve
 
 ### Constants ###
 
-_ver = "3.15.0.1"
+_ver = "3.15.0.2"
 
 ###  Globals  ###
 
@@ -386,17 +386,19 @@ async def on_message(message):
             msgcontent += f"\n{attachment.url}"
 
     msgcontent = msgcontent.strip() # Leading and trailing newlines and whitespace.
-    print(f"{FM.light_blue}{message.author.display_name} ({message.author.name}, {message.author.id}, {FM.light_yellow if rubi_all_object and message.channel == rubi_all_object else ""}{message.channel}{FM.light_blue if rubi_all_object and message.channel == rubi_all_object else ""}, {message.guild.name if guild_available else "Unknown Server"}):\n{msgcontent}")
 
     # Now or never.
     # Right now, right here, is where we need to figure out if we're going to early-return or not.
     # Based on Rubicon-all. God, I hate this implementation.
-    msgcontent = utils.resolve_links(msgcontent)
     if rubi_all_object and message.channel == rubi_all_object:
         await rubicon_all_handling(message.author.display_name, msgcontent, message.guild.name)
-        # Mode forced 1. Rubicon shouldn't respond if special character not present.
-        if not message_has_special_character:
-            return
+    
+    msgcontent = utils.resolve_links(msgcontent)
+    print(f"{FM.light_blue}{message.author.display_name} ({message.author.name}, {message.author.id}, {FM.light_yellow if rubi_all_object and message.channel == rubi_all_object else ""}{message.channel}{FM.light_blue if rubi_all_object and message.channel == rubi_all_object else ""}, {message.guild.name if guild_available else "Unknown Server"}):\n{msgcontent}")
+    
+    # Mode forced 1. Rubicon shouldn't respond if special character not present.
+    if rubi_all_object and message.channel == rubi_all_object and not message_has_special_character:
+        return
     try:
         response = utils.prompt_ai(msgcontent, message.author, message.channel, conversation, True, current_model, temperature, top_p, maximum_tokens,
                                    ["</s>", "[Inst]"], groq_api_key, True if message.guild else False)
@@ -597,7 +599,7 @@ async def rubicon_all_handling(username: str, message: str, guildname: str):
         if guild.name == guildname:
             continue # The message was sent here. Do not send it to the same guild.
         rubi_all_object = discord.utils.get(guild.text_channels, name=conjoined_channel_name) # Always exists, because guilds_with_rubiconall() ensures it exists.
-        totalmessage = f"`({guildname})` **{username}**:\n{message}" if username != rubicon_all_last_user and guildname != rubicon_all_last_guild else f"{message}"
+        totalmessage = f"`({guildname})` **{username}**:\n{message}" if username != rubicon_all_last_user or guildname != rubicon_all_last_guild else f"{message}"
         if len(totalmessage) > 2000:
             totalmessage = totalmessage[0:1999] # 1999 because 0 indexed
         await rubi_all_object.send(totalmessage)
