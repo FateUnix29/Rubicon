@@ -1,34 +1,34 @@
-# Rubicon 3
-### The latest installment of your insane silicon friend.
-Comes in 3 variants: Discord, in-game (Brick Rigs, Steam game), and terminal.
+# Rubicon 4
+Your friendly, nuts Discord bot, and ingame companion.
 
-## Notable Changes
-First off, Rubicon 3 is the first that might be open source. Given you are reading this, it likely is.
 
-Second off, there are other notable changes such as:
-- Rubicon now uses .json files for memory, instead of text files with a custom format. This is more robust and user-friendly.
-- The code-base is split into a few files and directories.
-- All of the desired variants (discord, ingame, terminal) are now in one singular project, one singular directory.
-- The code base makes an attempt to be cleaner and more understandable.
-- The code checks that your Python installation is what it was developed with.
+## Information
+Rubicon 4.x is designed to be cleaner, faster, better in most aspects than Rubicon 3.x.<br>
+It is also designed to be much more configurable, with emphasis on real-time configuration updates.<br>
+Rubicon also has a vast amount of new features and tweaks, to make it the *best* rubicon.<br>
 
-## Environmental Variables
-The following environmental keys are required:
+### What are these new features?
+A few include:
+- Changing status
+- Aforementioned configuration system
+- Better, cleaner functionalized code
+- A network of files that work together
+- More commands, with more options. Rubicon will even do your math!
 
-DT: Discord token.
+### Do you have any ideas for other features?
+Yes, here are some that would be awesome, but ambitious and low-priority:
+- Cutting out the 3rd party and allowing the model to be ran locally
+- Steam accounts and support
+- Rubicon self-configuration (Not too ambitious, but still questionable when Rubicon can't get function calls right)
+- Outsourcing to other models (technically present in the status changing function)
 
-GK: GroqCloud API key.
+### How do I install it?
+For the packages, you can use `pip install -r requirements.txt`.<br>
+However, Rubicon does use external services - These will require keys and tokens.<br>
 
-## Installation
-You already have Rubicon 3 installed.
+To enter your tokens, go to `tokens.json` in the root directory. Enter the names of the environment variables containing your tokens into each field.<br>
+Note, however, that if you aren't using Rubicon as a Discord bot, you won't need a Discord bot token.<br>
+(Note 2: Rubicon may gain support for being ran locally in the future. In that case, you do not need ANY tokens.)
 
-What you need is Python 3.12.3 or higher, if not present already.
-
-Find Python 3.12.5 (current Python version Rubicon is developed with) [here](https://www.python.org/downloads/release/python-3125/).
-
-## Running
-Given that you have Python, and the environment variables Rubicon needs to function, you can open a terminal/command prompt and run `python3 main.py`, or, if Python is set up properly,
-`py main.py`.
-
-Before running these two, however, make sure you have `cd`'d into the correct directory. For example, if you wish to run the discord version, `cd` into the discord directory, in the
-directory this README is in.
+### Is there a community?
+Yes! Join the [Discord](https://discord.gg/AnxGWymKbA) for information on Rubicon and all of my other projects.
