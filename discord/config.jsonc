@@ -29,8 +29,8 @@
     "system_channel_name": "rubicon-system-messages",                                      // The name of the channel Rubicon sends system messages to.
     "all_channel_name": "rubicon-all",                                                     // The name of the Rubicon server-bridge channel, where all guilds it is in conjoin.
 
-    "dev_mode": true,                                                                      // Developer mode - Basically, silences boot pings.
-    "notify_on_boot": false,                                                               // Does Rubicon say anything at all when booting?
+    "dev_mode": false,                                                                     // Developer mode - Basically, silences boot pings.
+    "notify_on_boot": true,                                                                // Does Rubicon say anything at all when booting?
 
     "rubicon_control_role": "Rubicon Control",                                             // The name of the control role, the role with the highest authority over Rubicon.
     "rubicon_elevated_role": "Rubicon Elevated",                                           // The name of the elevated role, the role that grants access to most Rubicon functionality.

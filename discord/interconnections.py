@@ -67,7 +67,7 @@ if exists(log_file): os.remove(log_file) # Remove log file if it exists. By defa
 
 logger = logging.getLogger("rubicon-discord")
 logger.setLevel(logging.DEBUG)
-file_handler = logging.FileHandler(log_file)
+file_handler = logging.FileHandler(log_file, encoding="utf-8", errors="ignore")
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
@@ -274,6 +274,25 @@ special_character =            validity_check(config_dict["special_character"], 
 crashes_are_siblings =         validity_check(config_dict["crashes_are_siblings"], bool, value_name="crashes_are_siblings")
 universal_sync =               validity_check(config_dict["universal_sync"], bool, value_name="universal_sync")
 target_server_for_sync =       validity_check(config_dict["target_server_for_sync"], Union[int, None], value_name="target_server_for_sync")
+
+aggressive_error_handling =    validity_check(config_dict["aggressive_error_handling"], bool, value_name="aggressive_error_handling")
+respond_in_every_channel =     validity_check(config_dict["respond_in_every_channel"], bool, value_name="respond_in_every_channel")
+
+home_channel_name =            validity_check(config_dict["home_channel_name"], str, value_name="home_channel_name")
+system_channel_name =          validity_check(config_dict["system_channel_name"], str, value_name="system_channel_name")
+all_channel_name =             validity_check(config_dict["all_channel_name"], str, value_name="all_channel_name")
+
+dev_mode =                     validity_check(config_dict["dev_mode"], bool, value_name="dev_mode")
+notify_on_boot =               validity_check(config_dict["notify_on_boot"], bool, value_name="notify_on_boot")
+
+role_rubicontrol =             validity_check(config_dict["rubicon_control_role"], str, value_name="rubicon_control_role")
+role_rubielevated =            validity_check(config_dict["rubicon_elevated_role"], str, value_name="rubicon_elevated_role")
+role_rubiboot =                validity_check(config_dict["rubicon_boot_role"], str, value_name="rubicon_boot_role")
+role_norubi =                  validity_check(config_dict["no_rubicon_role"], str, value_name="no_rubicon_role")
+
+lockdown =                     validity_check(config_dict["lockdown"], bool, value_name="lockdown")
+ids_rubicontrol =              validity_check(config_dict["ids_lockdown_control"], list, value_name="ids_lockdown_control")
+ids_rubielevated =             validity_check(config_dict["ids_lockdown_elevated"], list, value_name="ids_lockdown_elevated")
 
 # Discord (Internal use; non-configured)
 client = discord.Client(intents=discord.Intents.all())
@@ -545,10 +564,20 @@ def get_modules_of_parameters(fn_name: str) -> dict:
 
 @mark_generic_event()
 @client.event
-async def on_error(event):
+async def on_error(event, *args, **kwargs):
     for _, module in get_modules_of_parameters("on_error").items():
         if module[-1]: await module[0](locals()) # -1: Is a coro?
         else:          module[0](locals())
+
+def get_guilds_with_channel_name(name: str = "rubicon-general") -> list[discord.Guild] | None:
+    """Get all guilds with the specified channel name.
+    
+    :param name: The channel name to search for.
+    :type name: str
+    
+    :return: The guilds with the specified channel name, or None if not found.
+    :rtype: list[discord.Guild] | None"""
+    return [guild for guild in client.guilds if name in [channel.name for channel in guild.text_channels]] # Inefficiency at it's finest
 
 #-------------------------------------------------------------------------------------------------------------------------------------#
 ###                                                             Cleanup                                                             ###

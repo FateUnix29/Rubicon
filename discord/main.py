@@ -116,6 +116,15 @@ async def on_ready():
     #await tree.sync(guild=client.get_guild(1227389349268557894))
     await tree.sync()
     logger.info("Synced.")
+    for _, module in get_staged_modules(modules_readyhook, 2).items():
+        if module[-1]: await module[0](locals()) # -1: Is a coro?
+        else:          module[0](locals())
+
+    # Post stage 2 code here, I suppose.
+
+    for _, module in get_staged_modules(modules_readyhook, 3).items():
+        if module[-1]: await module[0](locals()) # -1: Is a coro?
+        else:          module[0](locals())
 
 @client.event
 async def on_message(message: discord.Message):
