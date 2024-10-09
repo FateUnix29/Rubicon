@@ -14,13 +14,14 @@ A few include:
 - Better, cleaner functionalized code
 - A network of files that work together
 - More commands, with more options. Rubicon will even do your math!
+- Modularity: Add a source file, interface with a brand new entire __API__ to allow Rubicon to use your custom ability!!
 
 ### Do you have any ideas for other features?
 Yes, here are some that would be awesome, but ambitious and low-priority:
 - Cutting out the 3rd party and allowing the model to be ran locally
 - Steam accounts and support
 - Rubicon self-configuration (Not too ambitious, but still questionable when Rubicon can't get function calls right)
-- Outsourcing to other models (technically present in the status changing function)
+- Outsourcing to other models
 
 ### How do I install it?
 For the packages, you can use `pip install -r requirements.txt`.<br>
