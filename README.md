@@ -35,9 +35,9 @@ Note, however, that if you aren't using Rubicon as a Discord bot, you won't need
 
 ## Windows:
 
-###Rubicon Setup Guide for Discord Bot
+##Rubicon Setup Guide for Discord Bot
 
-###Requirements:
+##Requirements:
 
     Git Installed: Ensure you have Git installed on your system.
     Discord Bot Created: Have your Discord bot already created.
