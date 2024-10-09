@@ -65,7 +65,7 @@ Now, download Rubicon by running:
 
     git clone https://github.com/FateUnix29/Rubicon.git
 
-    Wait for the download to complete.
+Wait for the download to complete.
 
 3. Navigate to the Discord Directory
 
