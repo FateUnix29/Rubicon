@@ -3,3 +3,4 @@ jurigged
 groq
 discord.py
 json-with-comments
+logging
