@@ -31,5 +31,75 @@ To enter your tokens, go to `tokens.json` in the root directory. Enter the names
 Note, however, that if you aren't using Rubicon as a Discord bot, you won't need a Discord bot token.<br>
 (Note 2: Rubicon may gain support for being ran locally in the future. In that case, you do not need ANY tokens.)
 
+# Tutorials:
+
+## Windows:
+
+### Rubicon Setup Guide for Discord Bot
+
+### Requirements:
+
+    Git Installed: Ensure you have Git installed on your system.
+    Discord Bot Created: Have your Discord bot already created.
+    GroqCloud API Token: Make sure you have copied your GroqCloud API token.
+
+Step-by-Step Instructions:
+1. Create a Directory for Rubicon
+
+    Choose a location on your computer where you would like to download the Rubicon files.
+
+2. Download Rubicon
+
+    Open the Command Prompt:
+        Press the Windows key, type cmd, and hit Enter.
+
+    Navigate to your chosen directory by typing the following command:
+
+    bash
+
+cd "C:\path\to\your\directory"
+
+(Replace C:\path\to\your\directory with the actual path you chose.)
+
+Now, download Rubicon by running:
+
+    git clone https://github.com/FateUnix29/Rubicon.git
+
+Wait for the download to complete.
+
+3. Navigate to the Discord Directory
+
+    Once the download is finished, change to the Discord directory with:
+
+    cd Rubicon\discord
+
+4. Install Required Dependencies
+
+    Install the necessary Python packages by typing:
+
+    pip install -r requirements.txt
+
+5. Set Up Environment Variables
+
+    Open Edit the System Environment Variables:
+        Press the Windows key, type Environment Variables, and select Edit the system environment variables.
+
+    In the System Properties window, click on the Environment Variables button.
+
+    Under System Variables, click New and enter the following:
+        Variable name: DT
+        Variable value: (Your Discord bot token)
+        Click OK.
+
+    Add another variable by clicking New again and entering:
+        Variable name: GK
+        Variable value: (Your GroqCloud token)
+        Click OK.
+
+6. Final Steps
+
+    Ensure all variables are set correctly and close the Environment Variables window.
+    You are now ready to run your Rubicon setup with your Discord bot!
+
 ### Is there a community?
 Yes! Join the [Discord](https://discord.gg/AnxGWymKbA) for information on Rubicon and all of my other projects.
