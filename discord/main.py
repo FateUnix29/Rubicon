@@ -119,11 +119,12 @@ async def on_ready():
 
 @client.event
 async def on_message(message: discord.Message):
-    if message.author == client.user: return
-    if message.content.lower().startswith("rubicon, show this man the facts"):
-        print("showing this man the facts")
-        await message.channel.send("<:thisthing:1279559563540172831>")
+    should_return = False
+    for _, module in get_staged_modules(modules_msghook, 1).items():
+        if module[-1]: await module[0](locals()) # -1: Is a coro?
+        else:          module[0](locals())
 
+    if should_return: return
 
 @tree.command(name="refresh_modules", description="Checks for new module source files by reloading __init__.py.")
 async def refresh_modules_CMD(ctx: discord.interactions.Interaction):
