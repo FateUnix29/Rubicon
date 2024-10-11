@@ -19,16 +19,23 @@ import random                                     # Random             || Random
 #-------------------------------------------------------------------------------------------------------------------------------------#
 
 from resources.other.colors import *              # ANSI Color Coding  || Terminal color coding.
+from interconnections import logger               # Logging            || Used for logging. This is dangerously close to a circular import,
+                                                                        # But interconnections will never need this file, so it's fine.
 
 #-------------------------------------------------------------------------------------------------------------------------------------#
 ###                                                          Initialization                                                         ###
 #-------------------------------------------------------------------------------------------------------------------------------------#
 
-# None...
+groq_instance = None
 
 #-------------------------------------------------------------------------------------------------------------------------------------#
 ###                                                            Functions                                                            ###
 #-------------------------------------------------------------------------------------------------------------------------------------#
+
+def init_groq(key: str) -> None:
+    """Initialize the Groq instance."""
+    global groq_instance
+    groq_instance = groq.Groq(api_key=key)
 
 def ai_prompt(
         conversation: list[dict[str, str]],
@@ -37,19 +44,27 @@ def ai_prompt(
         top_p: float,
         max_tokens: int,
         restricted_phrases: list[str],
-        groq_key: str,
 ) -> str:
     """Prompts Rubicon. Basically just an alias.
 
     :param conversation: The conversation history.
+    :type conversation: list[dict[str, str]]
     :param model: The name of the model to use.
+    :type model: str
     :param temp: The temperature to use.
+    :type temp: float
     :param top_p: The top_p to use.
-    :param max_tokens: The maximum tokens to use."""
+    :type top_p: float
+    :param max_tokens: The maximum tokens to use.
+    :type max_tokens: int
+    :param restricted_phrases: The list of restricted phrases. These are removed from the response.
+    :type restricted_phrases: list[str]
+    
+    :return: The response from Rubicon.
+    :rtype: str
+    """
 
     # We are not modifying the conversation. We are entirely expecting the rest of the code to do that, this time.
-
-    groq_instance = groq.Groq(api_key=groq_key)
 
     ai_completion = groq_instance.chat.completions.create(
         model=model,
@@ -57,6 +72,7 @@ def ai_prompt(
         temperature=temp,
         top_p=top_p,
         max_tokens=max_tokens,
+        stream=True
     )
 
     ai_response = ""
@@ -65,6 +81,6 @@ def ai_prompt(
     for phrase in restricted_phrases:
         ai_response = ai_response.replace(phrase, "")
     if ai_response.strip() == "":
-        print(f"{FM.info} No response from Rubicon.")
-        ai_response = "No response."
+        print(f"{FM.info} No response from Rubicon...")
+        logger.info("We got no response from Rubicon.")
     return ai_response[:1999], ai_response

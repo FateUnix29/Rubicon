@@ -45,6 +45,7 @@ class FM:
 
     trying = f"{reverse}{light_yellow}[TRYING]{remove_reverse}"
     ginfo = f"{reverse}{light_green}[INFO]{remove_reverse}"
+    yinfo = f"{reverse}{light_yellow}[INFO]{remove_reverse}"
 
     @staticmethod
     def header_warn(header, msg):

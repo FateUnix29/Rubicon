@@ -24,6 +24,8 @@ import importlib                                  # Importlib          || Import
 import importlib.util                             # Importlib          || Importing stuff. Hot code reloading.
 import traceback                                  # Traceback          || Functions for debugging.
 
+from copy import deepcopy                         # Deepcopy           || Deep copy ensures that an entirely new object is created when cloning.
+
 from os.path import \
     realpath, dirname, join as pjoin, exists      # Pathing            || Functions for pathing. Used much more commonly than the rest.
 
@@ -70,6 +72,8 @@ if not sys.version.startswith(py_ver_dev_with):
     FM.header_warn("Python Version", f"Your Python version ({sys.version}) does not match the development version ({py_ver_dev_with}). Please be careful.")
     logger.warning(f"We were developed with Python {py_ver_dev_with}, but we're being ran with {sys.version}. Could completely hault execution in some edge cases.")
     
+init_groq(groq_api_key)
+
 logger.info(f"We have finished stage 1 initialization.")
 
 #-------------------------------------------------------------------------------------------------------------------------------------#
@@ -128,12 +132,101 @@ async def on_ready():
 
 @client.event
 async def on_message(message: discord.Message):
-    should_return = False
+    global conversation # what the actual fuck this doesnt even register as bound unless i do this
+    message_contents = message.content # This is so that we may modify the message contents.
+    should_return = None
     for _, module in get_staged_modules(modules_msghook, 1).items():
         if module[-1]: await module[0](locals()) # -1: Is a coro?
         else:          module[0](locals())
-
+    print(f"{should_return=}\n{locals()["should_return"]=}\n\n{locals()=}")
     if should_return: return
+
+    for _, module in get_staged_modules(modules_msghook, 2).items():
+        if module[-1]: await module[0](locals()) # -1: Is a coro?
+        else:          module[0](locals())
+    print(f"{should_return=}\n{locals()['should_return']=}\n\n{locals()=}")
+    if should_return: return
+
+    for _, module in get_staged_modules(modules_msghook, 3).items():
+        if module[-1]: await module[0](locals()) # -1: Is a coro?
+        else:          module[0](locals())
+    print(f"{should_return=}\n{locals()['should_return']=}\n\n{locals()=}")
+    if should_return: return
+    print(message_contents)
+    try:
+        ai_response = ai_prompt(
+            conversation,
+            model_name,
+            temperature,
+            top_p,
+            context_length,
+            ["[Inst], </s>, <s>, (/s), [deleted], [/s], [!/s], <\\s>, [NoResponse]"] # Here, we actually exploit an old feature that removes some weird phrases it *used* to use.
+                                                                                     # [NoResponse] can now be used and removed to allow Rubicon to ignore you!
+        )
+
+    except groq.GroqError as e:
+        print(f"{FM.error} Rubicon::on_message || Groq Error: {type(e).__name__}: {e}\n{traceback.format_exc()}")
+        logger.error(f"Rubicon::on_message || Generic Groq Error: {type(e).__name__}: {e}\n{traceback.format_exc()}")
+        ai_response = f"Message loop error! Generic Groq service error. Not saying error, to preserve confidentiality.{'\n' if aggressive_error_handling else ''}"\
+                                   f"{f"Aggressive error handling is enabled, so the memory will be cleared to save {bot_name}." if aggressive_error_handling else ''}"
+        
+        old_conversation = deepcopy(conversation)
+        if aggressive_error_handling:
+            conversation = deepcopy(get_replace_system_prompt())
+            logger.info("Saved system prompt.")
+
+        for _, module in get_error_modules_of_type(e).items():
+            if module[-1]: await module[0](locals()) # -1: Is a coro?
+            else:          module[0](locals())
+
+    except groq.APIError as e:
+        print(f"{FM.error} Rubicon::on_message || Groq API Error: {type(e).__name__}: {e}\n{traceback.format_exc()}")
+        logger.error(f"Rubicon::on_message || Groq API Error: {type(e).__name__}: {e}\n{traceback.format_exc()}")
+        ai_response = f"Message loop error! API error. Not saying error, to preserve confidentiality. {'\n' if aggressive_error_handling else ''}"\
+                                   f"{f"Aggressive error handling is enabled, so the memory will be cleared to save {bot_name}." if aggressive_error_handling else ''}"
+
+        old_conversation = deepcopy(conversation)
+        if aggressive_error_handling:
+            conversation = deepcopy(get_replace_system_prompt())
+            logger.info("Saved system prompt.")
+
+        for _, module in get_error_modules_of_type(e).items():
+            if module[-1]: await module[0](locals()) # -1: Is a coro?
+            else:          module[0](locals())
+
+    except groq.RateLimitError as e:
+        print(f"{FM.error} Rubicon::on_message || We're being rate limited. {type(e).__name__}: {e}\n{traceback.format_exc()}")
+        logger.error(f"Rubicon::on_message || We're being rate limited. {type(e).__name__}: {e}\n{traceback.format_exc()}")
+        ai_response = f"Message loop error! Rate limit reached. Not saying error, to preserve confidentiality. {'\n' if aggressive_error_handling else ''}"\
+                                   f"{f"Aggressive error handling is enabled, so the memory will be cleared to save {bot_name}." if aggressive_error_handling else ''}"
+        
+        old_conversation = deepcopy(conversation)
+        if aggressive_error_handling:
+            conversation = deepcopy(get_replace_system_prompt())
+            logger.info("Saved system prompt.")
+
+        for _, module in get_error_modules_of_type(e).items():
+            if module[-1]: await module[0](locals()) # -1: Is a coro?
+            else:          module[0](locals())
+
+    except Exception as e:
+        print(f"{FM.error} Rubicon::on_message || Unknown error: {type(e).__name__}: {e}\n{traceback.format_exc()}")
+        logger.error(f"Rubicon::on_message || Unknown error: {type(e).__name__}: {e}\n{traceback.format_exc()}")
+        ai_response = f"Message loop error! Unknown error. Not saying error, to preserve confidentiality. {'\n' if aggressive_error_handling else ''}"\
+                                   f"{f"Aggressive error handling is enabled, so the memory will be cleared to save {bot_name}." if aggressive_error_handling else ''}"
+        
+        old_conversation = deepcopy(conversation)
+        if aggressive_error_handling:
+            conversation = deepcopy(get_replace_system_prompt())
+            logger.info("Saved system prompt.")
+
+        for _, module in get_error_modules_of_type(e).items():
+            if module[-1]: await module[0](locals()) # -1: Is a coro?
+            else:          module[0](locals())
+
+    print(f"{FM.light_yellow}Rubicon:\n{ai_response}")
+    await message.channel.send(ai_response[0] if type(ai_response) == tuple else ai_response + "\n\n-# rubicon 4 **BETA**, expect many crashes")
+    
 
 @tree.command(name="refresh_modules", description="Checks for new module source files by reloading __init__.py.")
 async def refresh_modules_CMD(ctx: discord.interactions.Interaction):
@@ -147,7 +240,7 @@ async def refresh_modules_CMD(ctx: discord.interactions.Interaction):
     await tree.sync()
     logger.info("Synced.")
     await ctx.channel.send("Synced.")
-    jurigged.watch()
+    jurigged.watch(logger=logger)
 
 @tree.command(name="force_sync", description="Force Rubicon to sync it's commands with all servers.")
 async def force_sync_CMD(ctx: discord.interactions.Interaction, server_id: str | None = None):

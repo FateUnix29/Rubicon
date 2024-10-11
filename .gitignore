@@ -1,5 +1,13 @@
+# Temporary or private files
 *.pyc
 */__pycache__/
 *.swp
 *.temp
 *.log
+
+# Any module that has 'EXCLUDE' starting it's name
+modules/*EXCLUDE*
+EXCLUDE*.py
+
+# Memory files
+discord/memories/*.json

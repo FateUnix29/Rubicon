@@ -15,7 +15,7 @@
     "model_name": "llama3-70b-8192",                                                       // Model name. Refer to GroqCloud documentation.
 
     // Discord
-    "respond_by_default": true,                                                            // Does Rubicon respond to messages by default?
+    "respond_by_default": false,                                                           // Does Rubicon respond to messages by default?
     "special_character": "^",                                                              // Special character. See DOCS.md for mode information and what this does.
 
     "crashes_are_siblings": true,                                                          // If Rubicon's AI process crashes, does it increment it's sibling count?
@@ -29,8 +29,11 @@
     "system_channel_name": "rubicon-system-messages",                                      // The name of the channel Rubicon sends system messages to.
     "all_channel_name": "rubicon-all",                                                     // The name of the Rubicon server-bridge channel, where all guilds it is in conjoin.
 
+    "all_channel_enabled": true,                                                           // Does Rubicon enable the Rubicon server-bridge channel? Disable if
+                                                                                           // you're being flagged for spam!
+
     "dev_mode": false,                                                                     // Developer mode - Basically, silences boot pings.
-    "notify_on_boot": true,                                                                // Does Rubicon say anything at all when booting?
+    "notify_on_boot": true,                                                                // Does Rubicon say anything at all when booting? Disable if you're being flagged for spam!
 
     "rubicon_control_role": "Rubicon Control",                                             // The name of the control role, the role with the highest authority over Rubicon.
     "rubicon_elevated_role": "Rubicon Elevated",                                           // The name of the elevated role, the role that grants access to most Rubicon functionality.

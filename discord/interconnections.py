@@ -266,6 +266,7 @@ model_name =                   get_valid_groq_model(validity_check(config_dict["
 logger.debug("interconnections.py || Internal use AI globals...")
 sibling_count = fetch_current_sibling_count()
 conversation = get_replace_system_prompt()
+conversation[0]["content"] = conversation[0]["content"].replace(f"{{{{bot_name}}}}", bot_name) # he he he he hah hah hah
 
 # Discord
 logger.debug("interconnections.py || Discord globals...")
@@ -281,6 +282,8 @@ respond_in_every_channel =     validity_check(config_dict["respond_in_every_chan
 home_channel_name =            validity_check(config_dict["home_channel_name"], str, value_name="home_channel_name")
 system_channel_name =          validity_check(config_dict["system_channel_name"], str, value_name="system_channel_name")
 all_channel_name =             validity_check(config_dict["all_channel_name"], str, value_name="all_channel_name")
+
+all_channel_enabled =          validity_check(config_dict["all_channel_enabled"], bool, value_name="all_channel_enabled")
 
 dev_mode =                     validity_check(config_dict["dev_mode"], bool, value_name="dev_mode")
 notify_on_boot =               validity_check(config_dict["notify_on_boot"], bool, value_name="notify_on_boot")
@@ -383,11 +386,11 @@ def rubicon_fncall(custom_name: str | None = None):
         return wrapper
     return decorator
 
-def rubicon_msghook(stage: int = 4):
-    """Rubicon message hook - Functions marked with this decorator will be called in one of 4 stages of the on_message function.
+def rubicon_msghook(stage: int = 5):
+    """Rubicon message hook - Functions marked with this decorator will be called in one of 5 stages of the on_message function.
     The decorated function will always be called with the locals of the event it is hooked to as the first argument.
     
-    :param stage: The stage of the on_message function. Defaults to 4, for latest stage. 1 would be earliest.
+    :param stage: The stage of the on_message function. Defaults to 5, for latest stage. 1 would be earliest.
     :type stage: int
     :return: The function wrapped as a message hook.
     :rtype: function"""
@@ -552,11 +555,31 @@ def get_modules_of_parameters(fn_name: str) -> dict:
     :param fn_name: The event name to search for.
     :type fn_name: str
     
-    :raise Exception: The event name is not a generic event. (Unknown event.)"""
+    :raise NameError: The event name is not a generic event. (Unknown event.)
+    
+    :return: The generic modules with the specified event name.
+    :rtype: dict"""
+
     if fn_name not in modules_generic:
         logger.critical(f"interconnections.py::get_modules_of_parameters || Unknown event: {fn_name}")
-        raise Exception(f"Unknown event: {fn_name}")
+        raise NameError(f"Unknown event: {fn_name}")
     return modules_generic[fn_name]
+
+def get_error_modules_of_type(error_class: Exception) -> dict:
+    """Get all error modules with the specified error class.
+    
+    :param error_class: The error class to search for.
+    :type error_class: Exception
+    
+    :raise NameError: The error class is not an error class. (Unknown error class.)
+    
+    :return: The error modules with the specified error class.
+    :rtype: dict"""
+
+    if type(error_class).__name__ not in modules_errhook:
+        logger.critical(f"interconnections.py::get_error_modules_of_type || Unknown error class: {type(error_class).__name__}")
+        raise NameError(f"Unknown error class: {type(error_class).__name__}")
+    return modules_errhook[type(error_class).__name__]
 
 #-------------------------------------------------------------------------------------------------------------------------------------#
 ###                                                        Discord Functions                                                        ###
