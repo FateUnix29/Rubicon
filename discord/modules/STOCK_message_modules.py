@@ -252,6 +252,23 @@ async def verify_special_character_usage(locals_):
 
     return locals_
 
+@rubicon_msghook(1)
+def check_if_reply(locals_):
+    msg: str = locals_['message_contents']
+    header: str = locals_['proto_content']
+    msg_raw: discord.Message = locals_['message']
+
+    if msg_raw.reference:
+        ref = msg_raw.reference
+        ref_author = ref.resolved.author
+        # We're replying to someone. Reconstruct the message.
+        header_nocol = header[:-2] # Get rid of the last character. (There's also a space at the end.)
+        msg = f"{header_nocol} (In response to {ref_author.display_name}): {msg[len(header):]}"
+        locals_['message_contents'] = msg.strip()
+
+    return locals_
+        
+
 def check_token_limit(msg):
     # Count words and special characters
     word_count = len(re.findall(r'\b\w+\b', msg))
