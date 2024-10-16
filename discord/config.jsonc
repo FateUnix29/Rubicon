@@ -3,7 +3,7 @@
     // Reloadable during runtime, use /config reload to reload
     
     // General
-    "version": "4.0.0.1",                                                                  // Rubicon version.
+    "version": "4.0.0.2",                                                                  // Rubicon version.
 
     // AI
     "bot_name": "Rubicon",                                                                 // The name of the bot.
