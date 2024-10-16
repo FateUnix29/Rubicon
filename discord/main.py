@@ -1,6 +1,6 @@
 #######################################################################################################################################
 ##                                                                                                                                   ##
-##                                                   RUBICON V4 - See _ver constant                                                  ##
+##                                                   RUBICON V4 - See config for ver                                                 ##
 ##                                      'Your friendly, nuts Discord bot, and ingame companion.'                                     ##
 ##                                                                                                                                   ##
 ##                               Authored by Kite (Discord: @kitethelunatic, Github: Copper/FateUnix29)                              ##

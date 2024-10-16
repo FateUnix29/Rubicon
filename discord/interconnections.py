@@ -51,7 +51,8 @@ log_file = pjoin(file_directory, "rubicon-discord.log")                         
 
 class RubiconError(Exception):
     """Rubicon's base error class."""
-    pass
+    def __init__(self, *objects: object) -> None:
+        super().__init__(*objects)
 
 class ConflictError(RubiconError):
     """A module has a conflict with another module."""
@@ -111,15 +112,20 @@ if discord_token is None or groq_api_key is None:
 
 model_name_DEFAULT = "llama3-70b-8192"
 
-try:
-    with open(pjoin(file_directory, "config.jsonc"), "r") as file:
-        config_dict = jsonc.load(file)
-        logger.info("Successfully read config file.")
-except FileNotFoundError:
-    FM.header_error("Fatal Exception: Unable to read config file",
-    f"Rubicon couldn't find it's config file. Perhaps you deleted it, didn't clone/move it to the base directory, or moved it somewhere else?")
-    logger.critical("Exiting safely: Unable to read config file. (config file not found)")
-    sys.exit(1)
+
+def read_config_file():
+    """Read the config file."""
+    try:
+        with open(pjoin(file_directory, "config.jsonc"), "r") as file:
+            config_dict = jsonc.load(file)
+            logger.info("Successfully read config file.")
+    except FileNotFoundError:
+        FM.header_error("Fatal Exception: Unable to read config file",
+        f"Rubicon couldn't find it's config file. Perhaps you deleted it, didn't clone/move it to the base directory, or moved it somewhere else?")
+        logger.critical("Exiting safely: Unable to read config file. (config file not found)")
+        sys.exit(1)
+
+    return config_dict
 
 #-------------------------------------------------------------------------------------------------------------------------------------#
 ###                                                          Functions PT1                                                          ###
@@ -262,58 +268,69 @@ def get_replace_system_prompt() -> list[dict[str, str]]:
 ###                                                             Globals                                                             ###
 #-------------------------------------------------------------------------------------------------------------------------------------#
 
-# AI
-logger.debug("interconnections.py || AI globals...")
-bot_name =                     validity_check(config_dict["bot_name"], str, value_name="bot_name")
-temperature =                  validity_check(config_dict["temperature"], float, value_name="temperature")
-top_p =                        validity_check(config_dict["top_p"], float, value_name="top_p")
-context_length =               validity_check(config_dict["context_len"], int, value_name="context_len")
-random_message_chance =        validity_check(config_dict["random_message_chance"], int, value_name="random_message_chance")
-default_sibling_count =        validity_check(config_dict["default_sibling_count"], int, value_name="default_sibling_count")
-model_name =                   get_valid_groq_model(validity_check(config_dict["model_name"], str, value_name="model_name"))
+def get_configuration():
+    # Prepare for the largest global statement you've ever seen. Clean code be damned in this function.
+    global bot_name, temperature, top_p, context_length, random_message_chance, default_sibling_count, model_name, sibling_count, conversation, \
+        respond_by_default, special_character, crashes_are_siblings, universal_sync, target_server_for_sync, aggressive_error_handling, \
+        respond_in_every_channel, home_channel_name, system_channel_name, all_channel_name, all_channel_enabled, dev_mode, \
+        notify_on_boot, role_rubicontrol, role_rubielevated, role_rubiboot, role_norubi, lockdown, ids_rubicontrol, ids_rubielevated, \
+        tree, client, watchlist_log, version, config_dict
+    
+    config_dict = read_config_file()
+    # AI
+    logger.debug("interconnections.py || AI globals...")
+    bot_name =                     validity_check(config_dict["bot_name"], str, value_name="bot_name")
+    temperature =                  validity_check(config_dict["temperature"], float, value_name="temperature")
+    top_p =                        validity_check(config_dict["top_p"], float, value_name="top_p")
+    context_length =               validity_check(config_dict["context_len"], int, value_name="context_len")
+    random_message_chance =        validity_check(config_dict["random_message_chance"], int, value_name="random_message_chance")
+    default_sibling_count =        validity_check(config_dict["default_sibling_count"], int, value_name="default_sibling_count")
+    model_name =                   get_valid_groq_model(validity_check(config_dict["model_name"], str, value_name="model_name"))
 
-# AI (Internal use; non-configured)
-logger.debug("interconnections.py || Internal use AI globals...")
-sibling_count = fetch_current_sibling_count()
-conversation = get_replace_system_prompt()
-conversation[0]["content"] = conversation[0]["content"].replace(f"{{{{bot_name}}}}", bot_name) # he he he he hah hah hah
+    # AI (Internal use; non-configured)
+    logger.debug("interconnections.py || Internal use AI globals...")
+    sibling_count = fetch_current_sibling_count()
+    conversation = get_replace_system_prompt()
+    conversation[0]["content"] = conversation[0]["content"].replace(f"{{{{bot_name}}}}", bot_name)
 
-# Discord
-logger.debug("interconnections.py || Discord globals...")
-respond_by_default =           validity_check(config_dict["respond_by_default"], bool, value_name="respond_by_default")
-special_character =            validity_check(config_dict["special_character"], str, value_name="special_character")
-crashes_are_siblings =         validity_check(config_dict["crashes_are_siblings"], bool, value_name="crashes_are_siblings")
-universal_sync =               validity_check(config_dict["universal_sync"], bool, value_name="universal_sync")
-target_server_for_sync =       validity_check(config_dict["target_server_for_sync"], Union[int, None], value_name="target_server_for_sync")
+    # Discord
+    logger.debug("interconnections.py || Discord globals...")
+    respond_by_default =           validity_check(config_dict["respond_by_default"], bool, value_name="respond_by_default")
+    special_character =            validity_check(config_dict["special_character"], str, value_name="special_character")
+    crashes_are_siblings =         validity_check(config_dict["crashes_are_siblings"], bool, value_name="crashes_are_siblings")
+    universal_sync =               validity_check(config_dict["universal_sync"], bool, value_name="universal_sync")
+    target_server_for_sync =       validity_check(config_dict["target_server_for_sync"], Union[int, None], value_name="target_server_for_sync")
 
-aggressive_error_handling =    validity_check(config_dict["aggressive_error_handling"], bool, value_name="aggressive_error_handling")
-respond_in_every_channel =     validity_check(config_dict["respond_in_every_channel"], bool, value_name="respond_in_every_channel")
+    aggressive_error_handling =    validity_check(config_dict["aggressive_error_handling"], bool, value_name="aggressive_error_handling")
+    respond_in_every_channel =     validity_check(config_dict["respond_in_every_channel"], bool, value_name="respond_in_every_channel")
 
-home_channel_name =            validity_check(config_dict["home_channel_name"], str, value_name="home_channel_name")
-system_channel_name =          validity_check(config_dict["system_channel_name"], str, value_name="system_channel_name")
-all_channel_name =             validity_check(config_dict["all_channel_name"], str, value_name="all_channel_name")
+    home_channel_name =            validity_check(config_dict["home_channel_name"], str, value_name="home_channel_name")
+    system_channel_name =          validity_check(config_dict["system_channel_name"], str, value_name="system_channel_name")
+    all_channel_name =             validity_check(config_dict["all_channel_name"], str, value_name="all_channel_name")
 
-all_channel_enabled =          validity_check(config_dict["all_channel_enabled"], bool, value_name="all_channel_enabled")
+    all_channel_enabled =          validity_check(config_dict["all_channel_enabled"], bool, value_name="all_channel_enabled")
 
-dev_mode =                     validity_check(config_dict["dev_mode"], bool, value_name="dev_mode")
-notify_on_boot =               validity_check(config_dict["notify_on_boot"], bool, value_name="notify_on_boot")
+    dev_mode =                     validity_check(config_dict["dev_mode"], bool, value_name="dev_mode")
+    notify_on_boot =               validity_check(config_dict["notify_on_boot"], bool, value_name="notify_on_boot")
 
-role_rubicontrol =             validity_check(config_dict["rubicon_control_role"], str, value_name="rubicon_control_role")
-role_rubielevated =            validity_check(config_dict["rubicon_elevated_role"], str, value_name="rubicon_elevated_role")
-role_rubiboot =                validity_check(config_dict["rubicon_boot_role"], str, value_name="rubicon_boot_role")
-role_norubi =                  validity_check(config_dict["no_rubicon_role"], str, value_name="no_rubicon_role")
+    role_rubicontrol =             validity_check(config_dict["rubicon_control_role"], str, value_name="rubicon_control_role")
+    role_rubielevated =            validity_check(config_dict["rubicon_elevated_role"], str, value_name="rubicon_elevated_role")
+    role_rubiboot =                validity_check(config_dict["rubicon_boot_role"], str, value_name="rubicon_boot_role")
+    role_norubi =                  validity_check(config_dict["no_rubicon_role"], str, value_name="no_rubicon_role")
 
-lockdown =                     validity_check(config_dict["lockdown"], bool, value_name="lockdown")
-ids_rubicontrol =              validity_check(config_dict["ids_lockdown_control"], list, value_name="ids_lockdown_control")
-ids_rubielevated =             validity_check(config_dict["ids_lockdown_elevated"], list, value_name="ids_lockdown_elevated")
+    lockdown =                     validity_check(config_dict["lockdown"], bool, value_name="lockdown")
+    ids_rubicontrol =              validity_check(config_dict["ids_lockdown_control"], list, value_name="ids_lockdown_control")
+    ids_rubielevated =             validity_check(config_dict["ids_lockdown_elevated"], list, value_name="ids_lockdown_elevated")
 
-# Discord (Internal use; non-configured)
-client = discord.Client(intents=discord.Intents.all())
-tree = app_commands.CommandTree(client)
-watchlist_log = watchlist_log = get_watchlist()
+    # Discord (Internal use; non-configured)
+    client = discord.Client(intents=discord.Intents.all())
+    tree = app_commands.CommandTree(client)
+    watchlist_log = watchlist_log = get_watchlist()
 
-# Other
-version =                      validity_check(config_dict["version"], str, value_name="version")
+    # Other
+    version =                      validity_check(config_dict["version"], str, value_name="version")
+
+get_configuration()
 
 # Other (Internal use; non-configured)
 logger.debug("interconnections.py || Specific internal globals...")

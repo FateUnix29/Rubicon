@@ -38,7 +38,7 @@ def try_clone_longterm():
 
 def try_write_longterm(remove_system_prompts: bool = True):
     global longterm
-    print(longterm)
+    #print(longterm)
     baseprompt = get_replace_system_prompt()
     try:
         with open(longterm_file, 'w') as f:
@@ -138,7 +138,7 @@ def convo_and_log():
 def save_messages_to_longterm(_):
     conversation_wo_prompt = conversation[1:] if conversation[0]['role'] == 'system' else convo_and_log()
     conversation_wo_prompt = [message for message in conversation_wo_prompt if message not in reminders_in_mem]
-    print(f"XOR={[x for x in longterm if x not in conversation_wo_prompt]}")
+    #print(f"XOR={[x for x in longterm if x not in conversation_wo_prompt]}")
     if len(conversation_wo_prompt) != 0:
         longterm.extend(conversation_wo_prompt[-2:])
         try_write_longterm()
@@ -157,6 +157,8 @@ def check_if_no_content(locals_):
     msg_raw: discord.Message = locals_['message']
     if not msg_raw.content:
         logger.info(f"Recieved a message from {msg_raw.author.display_name} ({msg_raw.author.id}) that had no content.")
+        if msg_raw.attachments:
+            logger.info("Do note, however, that this message had attachments. Not implemented yet.")
         locals_['should_return'] = True # No attachment handling yet.
 
     return locals_
@@ -213,19 +215,25 @@ async def verify_special_character_usage(locals_):
         in_all_channel = True
         locals_["in_all_channel"] = in_all_channel
         locals_["skip_general_check"] = skip_general_check
-    
+
     if not tmp_mode and not skip_general_check: # If mode 0, and not in rubicon-all (if not skip general check)
         if message_has_special_character and msg_raw.channel.name == home_channel_name: # If the message has the special character and is in the home channel
-            locals_['should_return'] = True
-            #return locals_ # Should be safe.. Hopefully.
+            if not msg_raw.author.bot: # If not a bot. This little guy needs to step in now. A prior module has checked for this. We don't need to check again.
+                locals_['should_return'] = True
         
-        elif not message_has_special_character and msg_raw.channel.name != home_channel_name: # If the message doesn't have the special character and is not in the home channel
-            locals_['should_return'] = True
-            #return locals_ # Should be safe.. Hopefully.
+        elif msg_raw.channel.name != home_channel_name: # If not in the home channel
+            if f"<@{client.user.id}>" not in msg_raw.content:
+                locals_['should_return'] = True
+            else:
+                pass
+
     
     elif tmp_mode and not message_has_special_character: # If mode 1, and the message doesn't start with the special character
         locals_['should_return'] = True
-        #return locals_ # SHOULD be safe... Probably isn't to be honest.
+
+    elif tmp_mode and message_has_special_character: # If mode 1, and the message starts with the special character
+        if f"<@{client.user.id}>" not in msg_raw.content:
+            locals_['should_return'] = True
 
     # Before the on_message routine returns, we must handle rubicon-all, since we've now dug a hole for ourselves with a should_return flag.
     if in_all_channel and all_channel_enabled:
