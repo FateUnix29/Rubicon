@@ -32,7 +32,7 @@
     "all_channel_enabled": true,                                                           // Does Rubicon enable the Rubicon server-bridge channel? Disable if
                                                                                            // you're being flagged for spam!
 
-    "dev_mode": false,                                                                     // Developer mode - Basically, silences boot pings.
+    "dev_mode": true,                                                                      // Developer mode - Basically, silences boot pings.
     "notify_on_boot": true,                                                                // Does Rubicon say anything at all when booting? Disable if you're being flagged for spam!
 
     "rubicon_control_role": "Rubicon Control",                                             // The name of the control role, the role with the highest authority over Rubicon.

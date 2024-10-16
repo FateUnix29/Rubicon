@@ -14,14 +14,12 @@
 import json                                       # JSON               || JSON encoder and decoder.
 import jsonc                                      # JSONC              || JSON with comments.
 import logging                                    # Logging            || Functions for logging.
-import groq                                       # Groq               || The Groq library. Used as the AI brains.
 import requests                                   # Requests           || Functions for making HTTP requests.
 import sys                                        # System             || The operating system and information about it.
 import discord                                    # Discord API        || The Discord API, implemented in Python.
 import os                                         # OS                 || Functions for interacting with the OS. Mostly used for pathing.
 import inspect                                    # Inspect            || Functions for inspecting objects and other functions.
 import functools                                  # Functions          || Functions for functions. Haha.
-import jurigged                                   # Jurigged           || Functions for hot code reloading. Your eyes do not decieve you.
 
 from os.path import \
     realpath, dirname, join as pjoin, exists      # Pathing            || Functions for pathing. Used much more commonly than the rest.
@@ -46,6 +44,8 @@ from resources.other.colors import *              # ANSI Color Coding  || Termin
 # This file does some of it's own management along with the globals.
 # One of those is json. Another is logging initialization. Basically, everything is here.
 
+current_loggers = []
+
 file_directory = dirname(realpath(__file__))                                           # Directory we're in.
 log_file = pjoin(file_directory, "rubicon-discord.log")                                # Log file location.
 
@@ -63,14 +63,24 @@ class ConflictError(RubiconError):
         self.con_1_file_name = con_1_file_name
         self.con_2_file_name = con_2_file_name
 
-if exists(log_file): os.remove(log_file) # Remove log file if it exists. By default, logging uses append.
 
-logger = logging.getLogger("rubicon-discord")
-logger.setLevel(logging.DEBUG)
-file_handler = logging.FileHandler(log_file, encoding="utf-8", errors="ignore")
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
+def setup_logger(logger_name: str, logger_file_path: str) -> tuple[logging.Logger, logging.FileHandler]:
+    """Create a logger. More like an alias."""
+    if exists(logger_file_path): os.remove(logger_file_path) # Remove log file if it exists. By default, logging uses append.
+    logger = logging.getLogger(logger_name)
+    logger.setLevel(logging.DEBUG)
+    file_handler = logging.FileHandler(logger_file_path, mode="a", encoding="utf-8", errors="ignore")
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
+    current_loggers.append([logger, file_handler])
+
+    return logger, file_handler
+
+
+logger, file_handler = setup_logger("rubicon-discord", log_file)
+
 
 try:
     with open(pjoin(file_directory, "keynames.json"), "r") as file:
@@ -350,6 +360,7 @@ modules_errhook = {
 def rubicon_fncall(custom_name: str | None = None):
     """Rubicon function call - Functions marked with this decorator will be accessible to Rubicon as a function call.
     The decorated function will always be called with the current conversation as the first argument.
+
     **Function calls do not support kwargs.**
 
     :param custom_name: The name of the function. Defaults to the function's name.
@@ -389,6 +400,9 @@ def rubicon_fncall(custom_name: str | None = None):
 def rubicon_msghook(stage: int = 5):
     """Rubicon message hook - Functions marked with this decorator will be called in one of 5 stages of the on_message function.
     The decorated function will always be called with the locals of the event it is hooked to as the first argument.
+
+    Your hook is expected to return a dict representing values in on_message's locals. If it doesn't return a dict, then nothing happens.
+    Be extremely cautious not to return a dict that you don't want to be merged with on_message's locals.
     
     :param stage: The stage of the on_message function. Defaults to 5, for latest stage. 1 would be earliest.
     :type stage: int
@@ -418,6 +432,9 @@ def rubicon_msghook(stage: int = 5):
 def rubicon_readyhook(stage: int = 3):
     """Rubicon ready hook - Functions marked with this decorator will be called in one of 3 stages of the on_ready function.
     The decorated function will always be called with the locals of the event it is hooked to as the first argument.
+
+    Your hook is expected to return a dict representing values in on_ready's locals. If it doesn't return a dict, then nothing happens.
+    Be extremely cautious not to return a dict that you don't want to be merged with on_ready's locals.
     
     :param stage: The stage of the on_ready function. Defaults to 3, for latest stage. 1 would be earliest.
     :type stage: int
@@ -446,6 +463,9 @@ def rubicon_readyhook(stage: int = 3):
 def rubicon_generichook(event: str, *args, **kwargs):
     """Generic Rubicon hook. Incredibly experimental and 100% not guaranteed to work. Use at risk. This assumes you've seen the other hooks' docstrings before.
     The decorated function will always be called with the locals of the event it is hooked to as the first argument.
+
+    Your hook is expected to return a dict representing values in the function hooked to's locals. If it doesn't return a dict, then nothing happens.
+    Be extremely cautious not to return a dict that you don't want to be merged with the function hooked to's locals.
     
     :param event: A string. It must match the exact function name of the event. Examples are on_ready, on_message, on_guild_join, etc.
     :type event: str
@@ -512,6 +532,9 @@ def rubicon_information(information: str):
 def rubicon_msghook_err(error_class: Exception):
     """A specialized hook that hooks into error handling within Rubicon's message hook, incase the AI fails.
     The decorated function will always be called with the locals of the event it is hooked to as the first argument.
+
+    Your hook is expected to return a dict representing values in on_message's locals. If it doesn't return a dict, then nothing happens.
+    Be extremely cautious not to return a dict that you don't want to be merged with on_message's locals.
     
     :param error_class: The class of the error to match. Can be literally any error, as Rubicon has a catch-all.
     :type error_class: Exception
@@ -607,4 +630,5 @@ def get_guilds_with_channel_name(name: str = "rubicon-general") -> list[discord.
 #-------------------------------------------------------------------------------------------------------------------------------------#
 
 # Close logging file
-file_handler.close()
+for _, handler in current_loggers:
+    handler.close()

@@ -11,3 +11,4 @@ EXCLUDE*.py
 
 # Memory files
 discord/memories/*.json
+discord/memories/*.json~

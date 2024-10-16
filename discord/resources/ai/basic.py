@@ -13,6 +13,7 @@
 import groq                                       # Groq               || The Groq library. Used as the AI brains.
 import os                                         # OS                 || Functions for interacting with the OS. Mostly used for pathing.
 import random                                     # Random             || Random number generation.
+import re                                         # RegEx              || Regular expressions.
 
 #-------------------------------------------------------------------------------------------------------------------------------------#
 ###                                                      Imports: Source Files                                                      ###

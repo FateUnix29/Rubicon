@@ -37,6 +37,8 @@ from resources.other.colors import *              # ANSI Color Coding  || Termin
 from interconnections import *                    # Interconnections   || The interconnections between the different files.
 from modules import *                             # Modules            || The modules of the bot. Still not a circular import, thus letting them start.
 from resources.ai.basic import *                  # AI Basic           || The primary functions of the AI.
+from resources.other.datedata import *            # Date Data          || Timestamps and time information.
+from resources.other.assembler import *           # Assembler          || Assembles messages into Rubicon format.
 
 #######################################################################################################################################
 
@@ -59,7 +61,8 @@ def signal_handler(_, __):
     Closes the log file and exits the program gracefully.
     """
     logger.error("Exiting safely: Interrupt recieved.")
-    file_handler.close()
+    for _, handler in current_loggers:
+        handler.close()
     sys.exit(0)
 
 signal.signal(signal.SIGINT, signal_handler)
@@ -110,49 +113,139 @@ def reload_modules():
 
 @client.event
 async def on_ready():
+    returned_locals = locals()
+    should_return = False
+    
     print(f"{FM.info} Logged in as {client.user}::{client.user.id}...")
-    for _, module in get_staged_modules(modules_readyhook, 1).items():
-        if module[-1]: await module[0](locals()) # -1: Is a coro?
-        else:          module[0](locals())
-    logger.info("We've begun watching for updates.")
+
+    for module in list(get_staged_modules(modules_readyhook, 1).values()):
+        if module[-1]:
+            val = await module[0](locals()) # -1: Is a coro?
+
+        else:
+            val = module[0](locals())
+
+        returned_locals.update(val if isinstance(val, dict) and val else {})
+        should_return = returned_locals.get('should_return', False)
+        if should_return: return
+
+
     jurigged.watch() # EVERYWHERE is now reloading.
+    logger.info("We've begun watching for updates.")
     logger.info("Syncing...")
-    #await tree.sync(guild=client.get_guild(1227389349268557894))
     await tree.sync()
     logger.info("Synced.")
-    for _, module in get_staged_modules(modules_readyhook, 2).items():
-        if module[-1]: await module[0](locals()) # -1: Is a coro?
-        else:          module[0](locals())
 
-    # Post stage 2 code here, I suppose.
 
-    for _, module in get_staged_modules(modules_readyhook, 3).items():
-        if module[-1]: await module[0](locals()) # -1: Is a coro?
-        else:          module[0](locals())
+    for module in list(get_staged_modules(modules_readyhook, 2).values()):
+        if module[-1]:
+            val = await module[0](locals()) # -1: Is a coro?
+
+        else:
+            val = module[0](locals())
+
+        returned_locals.update(val if isinstance(val, dict) and val else {})
+        should_return = returned_locals.get('should_return', False)
+        if should_return: return
+
+
+    # Put stage 2 code here, I suppose.
+
+
+    for module in list(get_staged_modules(modules_readyhook, 3).values()):
+        if module[-1]:
+            val = await module[0](locals()) # -1: Is a coro?
+
+        else:
+            val = module[0](locals())
+
+        returned_locals.update(val if isinstance(val, dict) and val else {})
+        should_return = returned_locals.get('should_return', False)
+        if should_return: return
 
 @client.event
 async def on_message(message: discord.Message):
-    global conversation # what the actual fuck this doesnt even register as bound unless i do this
-    message_contents = message.content # This is so that we may modify the message contents.
-    should_return = None
-    for _, module in get_staged_modules(modules_msghook, 1).items():
-        if module[-1]: await module[0](locals()) # -1: Is a coro?
-        else:          module[0](locals())
-    print(f"{should_return=}\n{locals()["should_return"]=}\n\n{locals()=}")
-    if should_return: return
+    global conversation # Why doesn't it register unless I do this? Come on, Python.
 
-    for _, module in get_staged_modules(modules_msghook, 2).items():
-        if module[-1]: await module[0](locals()) # -1: Is a coro?
-        else:          module[0](locals())
-    print(f"{should_return=}\n{locals()['should_return']=}\n\n{locals()=}")
-    if should_return: return
+    message_contents = message.content # These are the essential variables that are checked for in the .get() calls for modules.
+    proto_content = assemble_user_message(message, "") # This is so that message modules can utilize this to cut out the header info and modify the actual content.
+    # Modify message contents with a format.
+    message_contents = f"{proto_content}{message_contents}"
+    
+    message_has_special_character = False
+    skip_general_check = False
+    in_all_channel = False
+    returned_locals = locals()
+    
+    should_return = False
 
-    for _, module in get_staged_modules(modules_msghook, 3).items():
-        if module[-1]: await module[0](locals()) # -1: Is a coro?
-        else:          module[0](locals())
-    print(f"{should_return=}\n{locals()['should_return']=}\n\n{locals()=}")
-    if should_return: return
-    print(message_contents)
+    for module in list(get_staged_modules(modules_msghook, 1).values()):
+        if module[-1]:
+            val = await module[0](locals()) # -1: Is a coro?
+
+        else:
+            val = module[0](locals())
+
+        returned_locals.update(val if isinstance(val, dict) and val else {})
+        should_return = returned_locals.get('should_return', False)
+        message_contents = returned_locals.get('message_contents', message_contents)
+        message_has_special_character = returned_locals.get('message_has_special_character', message_has_special_character)
+        in_all_channel = returned_locals.get('in_all_channel', in_all_channel)
+        skip_general_check = returned_locals.get('skip_general_check', skip_general_check)
+        if should_return: return
+
+
+    for module in list(get_staged_modules(modules_msghook, 2).values()):
+        if module[-1]:
+            val = await module[0](locals()) # -1: Is a coro?
+
+        else:
+            val = module[0](locals())
+
+        returned_locals.update(val if isinstance(val, dict) and val else {})
+        should_return = returned_locals.get('should_return', False)
+        message_contents = returned_locals.get('message_contents', message_contents)
+        message_has_special_character = returned_locals.get('message_has_special_character', message_has_special_character)
+        in_all_channel = returned_locals.get('in_all_channel', in_all_channel)
+        skip_general_check = returned_locals.get('skip_general_check', skip_general_check)
+        if should_return: return
+
+
+    for module in list(get_staged_modules(modules_msghook, 3).values()):
+        if module[-1]:
+            val = await module[0](locals()) # -1: Is a coro?
+
+        else:
+            val = module[0](locals())
+
+        returned_locals.update(val if isinstance(val, dict) and val else {})
+        should_return = returned_locals.get('should_return', False)
+        message_contents = returned_locals.get('message_contents', message_contents)
+        message_has_special_character = returned_locals.get('message_has_special_character', message_has_special_character)
+        in_all_channel = returned_locals.get('in_all_channel', in_all_channel)
+        skip_general_check = returned_locals.get('skip_general_check', skip_general_check)
+        if should_return: return
+
+
+    for module in list(get_staged_modules(modules_msghook, 4).values()):
+        if module[-1]:
+            val = await module[0](locals()) # -1: Is a coro?
+
+        else:
+            val = module[0](locals())
+
+        returned_locals.update(val if isinstance(val, dict) and val else {})
+        should_return = returned_locals.get('should_return', False)
+        message_contents = returned_locals.get('message_contents', message_contents)
+        message_has_special_character = returned_locals.get('message_has_special_character', message_has_special_character)
+        in_all_channel = returned_locals.get('in_all_channel', in_all_channel)
+        skip_general_check = returned_locals.get('skip_general_check', skip_general_check)
+        if should_return: return
+
+    print(f"{FM.light_blue}{message_contents}")
+    conversation.append({"role": "user", "content": message_contents})
+    logger.info(message_contents)
+
     try:
         ai_response = ai_prompt(
             conversation,
@@ -175,9 +268,21 @@ async def on_message(message: discord.Message):
             conversation = deepcopy(get_replace_system_prompt())
             logger.info("Saved system prompt.")
 
-        for _, module in get_error_modules_of_type(e).items():
-            if module[-1]: await module[0](locals()) # -1: Is a coro?
-            else:          module[0](locals())
+
+        for module in list(get_error_modules_of_type(e).values()):
+            if module[-1]:
+                val = await module[0](locals()) # -1: Is a coro?
+
+            else:
+                val = module[0](locals())
+
+            returned_locals.update(val if isinstance(val, dict) and val else {})
+            should_return = returned_locals.get('should_return', False)
+            message_contents = returned_locals.get('message_contents', message_contents)
+            message_has_special_character = returned_locals.get('message_has_special_character', message_has_special_character)
+            in_all_channel = returned_locals.get('in_all_channel', in_all_channel)
+            skip_general_check = returned_locals.get('skip_general_check', skip_general_check)
+            if should_return: return
 
     except groq.APIError as e:
         print(f"{FM.error} Rubicon::on_message || Groq API Error: {type(e).__name__}: {e}\n{traceback.format_exc()}")
@@ -190,9 +295,22 @@ async def on_message(message: discord.Message):
             conversation = deepcopy(get_replace_system_prompt())
             logger.info("Saved system prompt.")
 
-        for _, module in get_error_modules_of_type(e).items():
-            if module[-1]: await module[0](locals()) # -1: Is a coro?
-            else:          module[0](locals())
+
+        for module in list(get_error_modules_of_type(e).values()):
+            if module[-1]:
+                val = await module[0](locals()) # -1: Is a coro?
+
+            else:
+                val = module[0](locals())
+
+            returned_locals.update(val if isinstance(val, dict) and val else {})
+            should_return = returned_locals.get('should_return', False)
+            message_contents = returned_locals.get('message_contents', message_contents)
+            message_has_special_character = returned_locals.get('message_has_special_character', message_has_special_character)
+            in_all_channel = returned_locals.get('in_all_channel', in_all_channel)
+            skip_general_check = returned_locals.get('skip_general_check', skip_general_check)
+            if should_return: return
+
 
     except groq.RateLimitError as e:
         print(f"{FM.error} Rubicon::on_message || We're being rate limited. {type(e).__name__}: {e}\n{traceback.format_exc()}")
@@ -205,9 +323,21 @@ async def on_message(message: discord.Message):
             conversation = deepcopy(get_replace_system_prompt())
             logger.info("Saved system prompt.")
 
-        for _, module in get_error_modules_of_type(e).items():
-            if module[-1]: await module[0](locals()) # -1: Is a coro?
-            else:          module[0](locals())
+ 
+        for module in list(get_error_modules_of_type(e).values()):
+            if module[-1]:
+                val = await module[0](locals()) # -1: Is a coro?
+
+            else:
+                val = module[0](locals())
+
+            returned_locals.update(val if isinstance(val, dict) and val else {})
+            should_return = returned_locals.get('should_return', False)
+            message_contents = returned_locals.get('message_contents', message_contents)
+            message_has_special_character = returned_locals.get('message_has_special_character', message_has_special_character)
+            in_all_channel = returned_locals.get('in_all_channel', in_all_channel)
+            skip_general_check = returned_locals.get('skip_general_check', skip_general_check)
+            if should_return: return
 
     except Exception as e:
         print(f"{FM.error} Rubicon::on_message || Unknown error: {type(e).__name__}: {e}\n{traceback.format_exc()}")
@@ -220,13 +350,42 @@ async def on_message(message: discord.Message):
             conversation = deepcopy(get_replace_system_prompt())
             logger.info("Saved system prompt.")
 
-        for _, module in get_error_modules_of_type(e).items():
-            if module[-1]: await module[0](locals()) # -1: Is a coro?
-            else:          module[0](locals())
 
-    print(f"{FM.light_yellow}Rubicon:\n{ai_response}")
-    await message.channel.send(ai_response[0] if type(ai_response) == tuple else ai_response + "\n\n-# rubicon 4 **BETA**, expect many crashes")
-    
+        for module in list(get_error_modules_of_type(e).values()):
+            if module[-1]:
+                val = await module[0](locals()) # -1: Is a coro?
+
+            else:
+                val = module[0](locals())
+
+            returned_locals.update(val if isinstance(val, dict) and val else {})
+            should_return = returned_locals.get('should_return', False)
+            message_contents = returned_locals.get('message_contents', message_contents)
+            message_has_special_character = returned_locals.get('message_has_special_character', message_has_special_character)
+            in_all_channel = returned_locals.get('in_all_channel', in_all_channel)
+            skip_general_check = returned_locals.get('skip_general_check', skip_general_check)
+            if should_return: return
+
+
+    print(f"{FM.light_yellow}Rubicon:\n{ai_response[1]}")
+    logger.info(f"Rubicon: {ai_response[1]}")
+    conversation.append({"role": "assistant", "content": ai_response[1]})
+    await message.channel.send(f"{ai_response[0] if type(ai_response) == tuple else ai_response}\n\n-# rubicon 4 **BETA**, expect many crashes and horrid issues")
+
+    for module in list(get_staged_modules(modules_msghook, 5).values()):
+        if module[-1]:
+            val = await module[0](locals()) # -1: Is a coro?
+
+        else:
+            val = module[0](locals())
+
+        returned_locals.update(val if isinstance(val, dict) and val else {})
+        should_return = returned_locals.get('should_return', False)
+        message_contents = returned_locals.get('message_contents', message_contents)
+        message_has_special_character = returned_locals.get('message_has_special_character', message_has_special_character)
+        in_all_channel = returned_locals.get('in_all_channel', in_all_channel)
+        skip_general_check = returned_locals.get('skip_general_check', skip_general_check)
+        if should_return: return
 
 @tree.command(name="refresh_modules", description="Checks for new module source files by reloading __init__.py.")
 async def refresh_modules_CMD(ctx: discord.interactions.Interaction):
