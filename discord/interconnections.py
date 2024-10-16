@@ -272,7 +272,7 @@ def get_configuration():
     # Prepare for the largest global statement you've ever seen. Clean code be damned in this function.
     global bot_name, temperature, top_p, context_length, random_message_chance, default_sibling_count, model_name, sibling_count, conversation, \
         respond_by_default, special_character, crashes_are_siblings, universal_sync, target_server_for_sync, aggressive_error_handling, \
-        respond_in_every_channel, home_channel_name, system_channel_name, all_channel_name, all_channel_enabled, dev_mode, \
+        respond_in_every_channel, home_channel_names, system_channel_name, all_channel_name, all_channel_enabled, dev_mode, \
         notify_on_boot, role_rubicontrol, role_rubielevated, role_rubiboot, role_norubi, lockdown, ids_rubicontrol, ids_rubielevated, \
         tree, client, watchlist_log, version, config_dict
     
@@ -304,7 +304,7 @@ def get_configuration():
     aggressive_error_handling =    validity_check(config_dict["aggressive_error_handling"], bool, value_name="aggressive_error_handling")
     respond_in_every_channel =     validity_check(config_dict["respond_in_every_channel"], bool, value_name="respond_in_every_channel")
 
-    home_channel_name =            validity_check(config_dict["home_channel_name"], str, value_name="home_channel_name")
+    home_channel_names =           validity_check(config_dict["home_channel_names"], list, value_name="home_channel_names")
     system_channel_name =          validity_check(config_dict["system_channel_name"], str, value_name="system_channel_name")
     all_channel_name =             validity_check(config_dict["all_channel_name"], str, value_name="all_channel_name")
 

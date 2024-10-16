@@ -217,11 +217,11 @@ async def verify_special_character_usage(locals_):
         locals_["skip_general_check"] = skip_general_check
 
     if not tmp_mode and not skip_general_check: # If mode 0, and not in rubicon-all (if not skip general check)
-        if message_has_special_character and msg_raw.channel.name == home_channel_name: # If the message has the special character and is in the home channel
+        if message_has_special_character and msg_raw.channel.name in home_channel_names: # If the message has the special character and is in the home channel
             if not msg_raw.author.bot: # If not a bot. This little guy needs to step in now. A prior module has checked for this. We don't need to check again.
                 locals_['should_return'] = True
         
-        elif msg_raw.channel.name != home_channel_name: # If not in the home channel
+        elif msg_raw.channel.name not in home_channel_names: # If not in the home channel
             if f"<@{client.user.id}>" not in msg_raw.content:
                 locals_['should_return'] = True
             else:

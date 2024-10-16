@@ -25,7 +25,7 @@
     
     "aggressive_error_handling": false,                                                    // Aggressive error handling wipes memory on crash, in attempt to save Rubicon.
     "respond_in_every_channel": false,                                                     // Does Rubicon respond in every channel in the guild?
-    "home_channel_name": "rubicon-general",                                                // The name of the main Rubicon channel.
+    "home_channel_names": ["rubicon-general", "all-general"],                              // The name of the main Rubicon channel(s).
     "system_channel_name": "rubicon-system-messages",                                      // The name of the channel Rubicon sends system messages to.
     "all_channel_name": "rubicon-all",                                                     // The name of the Rubicon server-bridge channel, where all guilds it is in conjoin.
 

@@ -23,33 +23,35 @@ def welcome_message(_):
 async def boot_msg_and_ping_people(_):
     if notify_on_boot:
         guilds_without_rubicongen = list(client.guilds)
+        for i, home_channel in enumerate(home_channel_names, start=1):
+            logger.info(f"Checking for guilds with home channel '#{home_channel}'. (Channel {i}/{len(home_channel_names)})")
+            for guild_with_rubicongen in get_guilds_with_channel_name(home_channel):
+                logger.info(f"Found guild with '#{home_channel}': {guild_with_rubicongen.name} with ID {guild_with_rubicongen.id}.")
+                if guild_with_rubicongen in guilds_without_rubicongen:
+                    guilds_without_rubicongen.remove(guild_with_rubicongen)
+                # We iterate through the guilds with the rubicon general channel instead of system messages, just incase system messages is not found.
+                target_boot_channel = discord.utils.get(guild_with_rubicongen.text_channels, name=system_channel_name)
 
-        for guild_with_rubicongen in get_guilds_with_channel_name(home_channel_name):
-            logger.info(f"Found guild with '#{home_channel_name}': {guild_with_rubicongen.name} with ID {guild_with_rubicongen.id}.")
-            guilds_without_rubicongen.remove(guild_with_rubicongen)
-            # We iterate through the guilds with the rubicon general channel instead of system messages, just incase system messages is not found.
-            target_boot_channel = discord.utils.get(guild_with_rubicongen.text_channels, name="rubicon-system-messages")
+                if not target_boot_channel:
+                    # Change to general. General will always exist, else we wouldn't be iterating through this list.
+                    target_boot_channel = discord.utils.get(guild_with_rubicongen.text_channels, name=home_channel)
 
-            if not target_boot_channel:
-                # Change to general. General will always exist, else we wouldn't be iterating through this list.
-                target_boot_channel = discord.utils.get(guild_with_rubicongen.text_channels, name="rubicon-general")
+                embed = discord.Embed(
+                    title="Rubicon Online!",
+                    description="Rubicon has come online. Feel free to talk and whatnot!",
+                    color=discord.Color.green()
+                )
 
-            embed = discord.Embed(
-                title="Rubicon Online!",
-                description="Rubicon has come online. Feel free to talk and whatnot!",
-                color=discord.Color.green()
-            )
-
-            role = discord.utils.get(guild_with_rubicongen.roles, name=role_rubiboot)
+                role = discord.utils.get(guild_with_rubicongen.roles, name=role_rubiboot)
+                
+                if role:
+                    role = f"<@&{role.id}>"
+                if dev_mode:
+                    role = "Rubicon is in development mode, no ping."
+                if not role:
+                    logger.warning(f"Guild '{guild_with_rubicongen.name}' with ID {guild_with_rubicongen.id} has no role named '{role_rubiboot}'.")
+                    role = f"No boot role found... ('{role_rubiboot}')"
             
-            if role:
-                role = f"<@&{role.id}>"
-            if dev_mode:
-                role = "Rubicon is in development mode, no ping."
-            if not role:
-                logger.warning(f"Guild '{guild_with_rubicongen.name}' with ID {guild_with_rubicongen.id} has no role named '{role_rubiboot}'.")
-                role = f"No boot role found... ('{role_rubiboot}')"
-            
-            await target_boot_channel.send(role, embed=embed)
+                await target_boot_channel.send(role, embed=embed)
     else:
         logger.info("Not notifying people of boot.")
