@@ -263,7 +263,7 @@ def check_if_reply(locals_):
         ref_author = ref.resolved.author
         # We're replying to someone. Reconstruct the message.
         header_nocol = header[:-2] # Get rid of the last character. (There's also a space at the end.)
-        msg = f"{header_nocol} (In response to {ref_author.display_name}): {msg[len(header):]}"
+        msg = f"{header_nocol}\n(In response to '{ref_author.display_name}': \"{ref.resolved.content}\"): {msg[len(header):]}"
         locals_['message_contents'] = msg.strip()
 
     return locals_
