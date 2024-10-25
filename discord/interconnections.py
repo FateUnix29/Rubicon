@@ -628,9 +628,19 @@ def get_error_modules_of_type(error_class: Exception) -> dict:
 @mark_generic_event()
 @client.event
 async def on_error(event, *args, **kwargs):
-    for _, module in get_modules_of_parameters("on_error").items():
-        if module[-1]: await module[0](locals()) # -1: Is a coro?
-        else:          module[0](locals())
+    returned_locals = locals()
+    should_return = False
+
+    for module in list(get_modules_of_parameters("on_error").values()):
+        if module[-1]:
+            val = await module[0](locals()) # -1: Is a coro?
+
+        else:
+            val = module[0](locals())
+
+        returned_locals.update(val if isinstance(val, dict) and val else {})
+        should_return = returned_locals.get('should_return', False)
+        if should_return: return
 
 def get_guilds_with_channel_name(name: str = "rubicon-general") -> list[discord.Guild] | None:
     """Get all guilds with the specified channel name.

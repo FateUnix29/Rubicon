@@ -5,10 +5,13 @@
 *.temp
 *.log
 
-# Any module that has 'EXCLUDE' starting it's name
+# Any module that has 'EXCLUDE' in it's name
 modules/*EXCLUDE*
 EXCLUDE*.py
 
 # Memory files
 discord/memories/*.json
 discord/memories/*.json~
+
+# Guildfile
+discord/guilds.txt

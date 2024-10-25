@@ -2,6 +2,7 @@ from interconnections import *
 import re, traceback
 from copy import deepcopy
 import shutil
+import random
 
 # Rubicon-all
 rubicon_all_last_user = None
@@ -10,6 +11,8 @@ rubicon_all_last_guild = None
 reminders_in_mem = []
 reminders_in_mem_2 = []
 longterm = []
+
+chance_of_remember = 20 # 1 in 20. This needs to be here, as if we recall every time, the bot goes nuts and slows down and eventually dies.
 
 # Long term memory
 
@@ -100,12 +103,18 @@ def word_overlap_score(text1: str, text2: str):
     intersection = set(words1) & set(words2)
     return len(intersection) / (len(words1) + len(words2) - len(intersection))
 
-# This function, too, is taken from the MindCraft project.
+class ReminderMsgChanceFailed:
+    """This class represents when the random chance check for the reminder message fails.
+    It's meant to be a specific, internal message, only returned by im_reminded_by_this when the random chance check fails."""
+    pass
+
+# This function, too, is taken from the MindCraft project. Though, heavily modified.
 def im_reminded_by_this(conversation):
     """Gets relevant long-term memory objects."""
     if len(longterm) <= 1: return []
     if longterm_checksum(): return []
 
+    if random.randint(0, chance_of_remember) != 0: return ReminderMsgChanceFailed()
     turn_text = ' '.join([turn['content'] for turn in conversation])
     longterm_copy = deepcopy(longterm) # Safety. Don't screw up the original.
     # Cut out every message that is both in long term and in the current conversation.
@@ -237,6 +246,10 @@ async def verify_special_character_usage(locals_):
 
     # Before the on_message routine returns, we must handle rubicon-all, since we've now dug a hole for ourselves with a should_return flag.
     if in_all_channel and all_channel_enabled:
+        # Check if this user is banned from Rubicon.
+        raw_role = discord.utils.get(msg_raw.guild.roles, name=role_norubi)
+        if raw_role in msg_raw.author.roles:
+            return locals_
         guildname = msg_raw.guild.name
         username = msg_raw.author.display_name
         all_str = f"`({guildname})` **{username}**: {msg_raw.content}" if username != rubicon_all_last_user or guildname != rubicon_all_last_guild else f"{msg_raw.content}"
@@ -285,7 +298,6 @@ def long_term_memory_handling(_):
 
     try: # I don't trust im_reminded_by_this to be reliable just yet.
         reminders = im_reminded_by_this(conversation)
-    
     except Exception as e:
         logger.debug(f"StockMessageModules::long_term_memory_handling || Bad! Bad! Bad! I knew that thing wasn't reliable!\nError in im_reminded_by_this:\n{type(e).__name__}: {e}\n"
         f"{traceback.format_exc()}")
@@ -293,6 +305,11 @@ def long_term_memory_handling(_):
     
     if reminders == []:
         return # Just be quiet, damn it...
+
+    if isinstance(reminders, ReminderMsgChanceFailed):
+        # We failed the RNG check. Don't do anything.
+        logger.info(f"StockMessageModules::long_term_memory_handling || Failed the RNG check (1 in {chance_of_remember}). Not reminding Rubicon of any messages.")
+        return
 
     else:
         msg += "(The user's message reminds you of something from your long term memory...)\n"
@@ -382,3 +399,9 @@ def check_if_conversation_is_overlimit(_):
             reminders_in_mem_2.remove(conversation[1])
         
         conversation = conversation[1:]
+
+@tree.command(name="toggle_responding", description="Toggle responding to messages.")
+async def toggle_responding(ctx: discord.interactions.Interaction):
+    global respond_by_default
+    respond_by_default = not respond_by_default
+    await ctx.response.send_message(f"{'Responding by default.' if respond_by_default else 'Silent by default.'}")

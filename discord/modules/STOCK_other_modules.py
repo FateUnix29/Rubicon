@@ -2,6 +2,7 @@ from interconnections import *
 import time, traceback
 
 @tree.command(name="loopsync", description="Loop sync command.")
+@app_commands.checks.has_any_role(role_rubicontrol, role_rubielevated)
 async def loop_sync_CMD(ctx: discord.interactions.Interaction, times: int = 10):
     """Loop sync command."""
     await ctx.response.send_message("Loop syncing...")

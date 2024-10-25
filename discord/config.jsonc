@@ -1,48 +1,35 @@
 {
-    // Rubi4 Discord: Configuration
-    // Reloadable during runtime, use /config reload to reload
-    
-    // General
-    "version": "4.0.0.5",                                                                  // Rubicon version.
-
-    // AI
-    "bot_name": "Rubicon",                                                                 // The name of the bot.
-    "temperature": 0.20,                                                                   // Model temperature.
-    "top_p": 1.00,                                                                         // Model top_p. Similar to temperature, but recommended to change one or the other.
-    "context_len": 8192,                                                                   // Context length. How many tokens the AI can remember.
-    "random_message_chance": 50,                                                           // How often does Rubicon send a random message along with it's response?
-    "default_sibling_count": 0,                                                            // How many siblings should Rubicon have if reading siblings fails?
-    "model_name": "llama3-70b-8192",                                                       // Model name. Refer to GroqCloud documentation.
-
-    // Discord
-    "respond_by_default": false,                                                           // Does Rubicon respond to messages by default?
-    "special_character": "^",                                                              // Special character. See DOCS.md for mode information and what this does.
-
-    "crashes_are_siblings": true,                                                          // If Rubicon's AI process crashes, does it increment it's sibling count?
-    "universal_sync": true,                                                                // Does Rubicon sync it's commands to all servers?
-    "target_server_for_sync": null,                                                        // The server ID to sync it's commands to, if not all servers.
-    "send_message_in_all_servers": false,                                                  // Does Rubicon send it's response across all servers, making it look like it's crazy?
-    
-    "aggressive_error_handling": false,                                                    // Aggressive error handling wipes memory on crash, in attempt to save Rubicon.
-    "respond_in_every_channel": false,                                                     // Does Rubicon respond in every channel in the guild?
-    "home_channel_names": ["rubicon-general", "all-general"],                              // The name of the main Rubicon channel(s).
-    "system_channel_name": "rubicon-system-messages",                                      // The name of the channel Rubicon sends system messages to.
-    "all_channel_name": "rubicon-all",                                                     // The name of the Rubicon server-bridge channel, where all guilds it is in conjoin.
-
-    "all_channel_enabled": true,                                                           // Does Rubicon enable the Rubicon server-bridge channel? Disable if
-                                                                                           // you're being flagged for spam!
-
-    "dev_mode": true,                                                                      // Developer mode - Basically, silences boot pings.
-    "notify_on_boot": true,                                                                // Does Rubicon say anything at all when booting? Disable if you're being flagged for spam!
-
-    "rubicon_control_role": "Rubicon Control",                                             // The name of the control role, the role with the highest authority over Rubicon.
-    "rubicon_elevated_role": "Rubicon Elevated",                                           // The name of the elevated role, the role that grants access to most Rubicon functionality.
-    "rubicon_boot_role": "Rubicon Boot Ping",                                              // The name of the role that Rubicon pings when it boots.
-    "no_rubicon_role": "No Rubicon",                                                       // The name of the restrict role. Any users with this role are ignored by the AI.
-
-    "lockdown": false,                                                                     // Lockdown mode. If true, Rubicon switches from moderation roles to moderator IDs.
-    "ids_lockdown_control": [],                                                            // List of moderator IDs with control level access.
-    "ids_lockdown_elevated": [],                                                           // List of moderator IDs with elevated level access.
-
-    "watchlist_user_ids": []                                                               // List of user IDs to log.
+    "version": "4.0.1.0",
+    "bot_name": "Rubicon",
+    "temperature": 0.2,
+    "top_p": 1.0,
+    "context_len": 8192,
+    "random_message_chance": 50,
+    "default_sibling_count": 0,
+    "model_name": "llama3-70b-8192",
+    "respond_by_default": false,
+    "special_character": "^",
+    "crashes_are_siblings": true,
+    "universal_sync": true,
+    "target_server_for_sync": null,
+    "send_message_in_all_servers": false,
+    "aggressive_error_handling": false,
+    "respond_in_every_channel": false,
+    "home_channel_names": [
+        "rubicon-general",
+        "all-general"
+    ],
+    "system_channel_name": "rubicon-system-messages",
+    "all_channel_name": "rubicon-all",
+    "all_channel_enabled": true,
+    "dev_mode": true,
+    "notify_on_boot": true,
+    "rubicon_control_role": "Rubicon Control",
+    "rubicon_elevated_role": "Rubicon Elevated",
+    "rubicon_boot_role": "Rubicon Boot Ping",
+    "no_rubicon_role": "No Rubicon",
+    "lockdown": false,
+    "ids_lockdown_control": [],
+    "ids_lockdown_elevated": [],
+    "watchlist_user_ids": []
 }

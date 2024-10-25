@@ -388,6 +388,7 @@ async def on_message(message: discord.Message):
         if should_return: return
 
 @tree.command(name="refresh_modules", description="Checks for new module source files by reloading __init__.py.")
+@app_commands.checks.has_any_role(role_rubicontrol)
 async def refresh_modules_CMD(ctx: discord.interactions.Interaction):
     """Checks for new module source files by reloading __init__.py."""
     await ctx.response.send_message("Refreshing modules...")
@@ -402,6 +403,7 @@ async def refresh_modules_CMD(ctx: discord.interactions.Interaction):
     jurigged.watch(logger=logger)
 
 @tree.command(name="force_sync", description="Force Rubicon to sync it's commands with all servers.")
+@app_commands.checks.has_any_role(role_rubicontrol, role_rubielevated)
 async def force_sync_CMD(ctx: discord.interactions.Interaction, server_id: str | None = None):
     await ctx.response.send_message("Force syncing...")
     logger.info("Force syncing...")

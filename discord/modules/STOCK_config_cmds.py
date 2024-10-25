@@ -53,16 +53,19 @@ def write_to_specified_parameter(parameter: str, value: any):
 
 
 @tree.command(name="change_bot_name", description=f"Change the name {bot_name} percieves itself as.")
+@app_commands.checks.has_any_role(role_rubicontrol, role_rubielevated)
 async def change_bot_name_CMD(ctx: discord.Interaction, name: str = "Rubicon"):
     try:
         write_to_specified_parameter("bot_name", name)
         logger.info(f"StockConfigCmds::change_bot_name || Changed bot name to {name}.")
         await ctx.response.send_message(f"Changed {bot_name} to {name}.")
+        await client.user.edit(username=name)
     except ConfigParamError:
         await ctx.response.send_message(f"Parameter {name} not found in config file.")
 
 
 @tree.command(name="man_refresh", description="Manually refresh the configuration file, loading any changed values.")
+@app_commands.checks.has_any_role(role_rubicontrol, role_rubielevated)
 async def man_refresh_CMD(ctx: discord.Interaction):
     await ctx.response.send_message("Refreshing...")
     try:
@@ -78,6 +81,7 @@ async def man_refresh_CMD(ctx: discord.Interaction):
 
 
 @tree.command(name="set_special_char", description="Set the special character for the bot to use.")
+@app_commands.checks.has_any_role(role_rubicontrol, role_rubielevated)
 async def set_special_char_CMD(ctx: discord.Interaction, char: str = "^"):
     try:
         write_to_specified_parameter("special_char", char)
