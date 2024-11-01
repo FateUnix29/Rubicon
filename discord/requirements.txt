@@ -5,3 +5,4 @@ discord.py
 json-with-comments
 logging
 datetime
+ollama

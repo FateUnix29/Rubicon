@@ -1,12 +1,15 @@
 {
-    "version": "4.0.1.0",
+    "version": "4.1.0.3",
     "bot_name": "Rubicon",
     "temperature": 0.2,
     "top_p": 1.0,
     "context_len": 8192,
     "random_message_chance": 50,
     "default_sibling_count": 0,
-    "model_name": "llama3-70b-8192",
+
+    //"model_name": "ollama/gemma:2b", // Prefix with ollama/ in any capitalization to use *LOCAL MODELS!*
+    "model_name": "llama3-70b-8192",   
+
     "respond_by_default": false,
     "special_character": "^",
     "crashes_are_siblings": true,

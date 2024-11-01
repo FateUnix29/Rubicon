@@ -74,8 +74,11 @@ py_ver_dev_with = "3.12.6"                                                      
 if not sys.version.startswith(py_ver_dev_with):
     FM.header_warn("Python Version", f"Your Python version ({sys.version}) does not match the development version ({py_ver_dev_with}). Please be careful.")
     logger.warning(f"We were developed with Python {py_ver_dev_with}, but we're being ran with {sys.version}. Could completely hault execution in some edge cases.")
-    
-init_groq(groq_api_key)
+
+if not ollama_enabled:
+    init_groq(groq_api_key)
+else:
+    logger.info("Hmmm! Would you look at that! We're using Ollama. Not initializing Groq.")
 
 logger.info(f"We have finished stage 1 initialization.")
 

@@ -285,7 +285,7 @@ def get_configuration():
     context_length =               validity_check(config_dict["context_len"], int, value_name="context_len")
     random_message_chance =        validity_check(config_dict["random_message_chance"], int, value_name="random_message_chance")
     default_sibling_count =        validity_check(config_dict["default_sibling_count"], int, value_name="default_sibling_count")
-    model_name =                   get_valid_groq_model(validity_check(config_dict["model_name"], str, value_name="model_name"))
+    model_name =                   validity_check(config_dict["model_name"], str, value_name="model_name")
 
     # AI (Internal use; non-configured)
     logger.debug("interconnections.py || Internal use AI globals...")
@@ -368,39 +368,54 @@ modules_errhook = {
     # This module dict is called during on_message() error handling.
 }
 
+ollama_enabled = model_name.lower().startswith("ollama/")
+
+if not ollama_enabled:
+    # Do groq checking.
+    model_name = get_valid_groq_model(model_name)
+
 #-------------------------------------------------------------------------------------------------------------------------------------#
 ###                                                        Functions (Proper)                                                       ###
 #-------------------------------------------------------------------------------------------------------------------------------------#
 
 # This includes decorators.
 
-def rubicon_fncall(custom_name: str | None = None):
+def rubicon_fncall(custom_name: str | None = None, *, description_doc: str | None = None):
     """Rubicon function call - Functions marked with this decorator will be accessible to Rubicon as a function call.
     The decorated function will always be called with the current conversation as the first argument.
 
     **Function calls do not support kwargs.**
 
-    :param custom_name: The name of the function. Defaults to the function's name.
+    :param custom_name: The name of the function, as it appears to Rubicon. Defaults to the function's name.
     :type custom_name: str
+    :param description_doc: The description/documentation of the function call. Included directly in the system prompt if present, so keep it short and sweet.
+    :type description_doc: str
+    
     :return: The function wrapped as a function call.
     :rtype: function"""
 
     # MODULES_FNCALL DICT FORMAT:
-    # "name_for_rubicon": [function, [arguments (minus conversation)], file, is coro?]
+    # "name_for_rubicon": [function, [arguments (minus conversation)], file, doc, is coro?]
 
     # Modules are passed the conversation argument so they may give the results back to Rubicon or modify the conversation in any other way.
     # They are expected to keep track of the state of Rubicon themselves, however, if they are to error out under specific conditions/states.
     # Under no circumstances are they allowed to crash the program or script.
 
     def decorator(func):
-        nonlocal custom_name # screw you, scopes
+        nonlocal custom_name, description_doc # screw you, scopes
+        
         if not custom_name:
             custom_name = func.__name__
+
         file = func.__code__.co_filename
 
         # Add this function to the modules dict.
-        modules_fncall[custom_name] = [func, inspect.getfullargspec(func).args[1:], file, iscoro(func)] # Conversation given automatically, used or not
+        modules_fncall[custom_name] = [func, inspect.getfullargspec(func).args[1:], file, description_doc, iscoro(func)] # Conversation given automatically, used or not
         logger.info(f"interconnections.py::rubicon_fncall || {'Added' if not custom_name in modules_fncall else 'Replaced'} function call {'to' if not custom_name in modules_fncall else 'in'} Rubicon: {custom_name}")
+        
+        # Now, time to add it to the system prompt.
+        conversation[0]["content"] += f"Function call {custom_name}({', '.join(inspect.getfullargspec(func).args[1:])}): {description_doc}"
+        
         @functools.wraps(func)
         def wrapper(conversation, *args):
             
@@ -611,15 +626,17 @@ def get_error_modules_of_type(error_class: Exception) -> dict:
     :param error_class: The error class to search for.
     :type error_class: Exception
     
-    :raise NameError: The error class is not an error class. (Unknown error class.)
-    
     :return: The error modules with the specified error class.
     :rtype: dict"""
 
     if type(error_class).__name__ not in modules_errhook:
-        logger.critical(f"interconnections.py::get_error_modules_of_type || Unknown error class: {type(error_class).__name__}")
-        raise NameError(f"Unknown error class: {type(error_class).__name__}")
-    return modules_errhook[type(error_class).__name__]
+        logger.error(f"interconnections.py::get_error_modules_of_type || Unknown error class: {type(error_class).__name__}")
+    
+    return modules_errhook.get(type(error_class).__name__, {}) # That's the very last time you're going to raise a pointless NameError, okay bub?
+
+def log_conversation_history():
+    """Log the conversation history to the log file. Somewhat pointless, but whatever."""
+    logger.info(f"interconnections.py::log_conversation_history || Conversation history: {conversation}")
 
 #-------------------------------------------------------------------------------------------------------------------------------------#
 ###                                                        Discord Functions                                                        ###

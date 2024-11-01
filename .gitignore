@@ -12,6 +12,8 @@ EXCLUDE*.py
 # Memory files
 discord/memories/*.json
 discord/memories/*.json~
+# This technically counts as one
+discord/siblings.txt
 
 # Guildfile
 discord/guilds.txt

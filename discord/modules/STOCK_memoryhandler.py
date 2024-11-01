@@ -1,5 +1,5 @@
 from interconnections import *
-
+from copy import deepcopy
 
 @tree.command(name="load_memory", description="Load memory from file.")
 @app_commands.checks.has_any_role(role_rubicontrol, role_rubielevated)
@@ -18,9 +18,10 @@ async def load_memory_CMD(ctx: discord.interactions.Interaction, file_name: str 
     try:
         with open(path, "r") as file:
             memory = json.load(file)
+            conversation = deepcopy([])
+            conversation = deepcopy(memory)
             await ctx.response.send_message(f"Loaded memory from `{file_name}`.")
             logger.info(f"StockMemoryHandler::load_memory || Loaded memory from '{file_name}'.")
-            conversation = memory
             return
 
     except FileNotFoundError:
@@ -66,9 +67,12 @@ async def read_mem_CMD(ctx: discord.interactions.Interaction):
 
     if not conversation:
         await ctx.response.send_message("Memory is empty.")
+        logger.info("StockMemoryHandler::read_mem_CMD || Tried to display memory, but memory is empty.")
         return
 
     await ctx.response.send_message("CONVERSATION START")
+    convo_to_log = [f"Role: `{message['role']}`, Content: ```{message['content']}```" for message in conversation]
+    logger.info(f"StockMemoryHandler::read_mem_CMD || Started displaying memory, contents:\n{"\n".join(convo_to_log)}")
 
     for message in conversation:
         string_to_send = f"Role: `{message['role']}`, Content: ```{message['content']}```"
@@ -79,4 +83,13 @@ async def read_mem_CMD(ctx: discord.interactions.Interaction):
         
         await ctx.channel.send(string_to_send)
     
-    await ctx.response.send_message("Done...")
+    await ctx.channel.send("Done...")
+
+
+@tree.command(name="reset_memory", description="Reset memory to the base prompt.")
+@app_commands.checks.has_any_role(role_rubicontrol, role_rubielevated)
+async def reset_memory_CMD(ctx: discord.interactions.Interaction):
+    """Reset memory to the base prompt."""
+    global conversation
+    conversation = deepcopy(get_replace_system_prompt())
+    await ctx.response.send_message("Memory reset.")
